@@ -95,9 +95,8 @@ $ npm install
 ```
 
 ### Build the on-chain program
-
-There is both a Rust and C version of the on-chain program, whichever is built
-last will be the one used when running the example.
+copy/clone amm project in the same folder
+because this program uses amm project as crate
 
 ```bash
 $ npm run build:yf
