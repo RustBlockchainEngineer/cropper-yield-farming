@@ -16,7 +16,8 @@ use {
             SOL_MINT_ADDRESS,
             ETH_MINT_ADDRESS,
             HARVEST_FEE_NUMERATOR,
-            HARVEST_FEE_DENOMINATOR
+            HARVEST_FEE_DENOMINATOR,
+            REWARD_MULTIPLER
         },
     },
     borsh::{BorshDeserialize, BorshSerialize},
@@ -132,6 +133,12 @@ impl Processor {
         // if not, returns SignatureMissing error
         if !creator_info.is_signer {
             return Err(FarmPoolError::SignatureMissing.into());
+        }
+
+        // check if end time is later than start time
+        // if yes, returns WrongPeriod error
+        if end_timestamp <= start_timestamp {
+            return Err(FarmPoolError::WrongPeriod.into());
         }
 
         // borrow farm account data to initialize (mutable)
@@ -753,7 +760,7 @@ impl Processor {
         // update reward per share net and last distributed timestamp
         let multiplier = cur_timestamp - farm_pool.last_timestamp;
         let reward = multiplier * farm_pool.reward_per_timestamp;
-        farm_pool.reward_per_share_net = farm_pool.reward_per_share_net + 1000000000 * reward / lp_supply;
+        farm_pool.reward_per_share_net = farm_pool.reward_per_share_net + REWARD_MULTIPLER * reward / lp_supply;
         farm_pool.last_timestamp = cur_timestamp;
     }
     /// get authority by given program address.
@@ -814,14 +821,15 @@ impl PrintProgramError for FarmPoolError {
             FarmPoolError::InvalidValidatorStakeList => msg!("Error: Invalid validator stake list account"),
             FarmPoolError::InvalidFeeAccount => msg!("Error: Invalid manager fee account"),
             FarmPoolError::WrongPoolMint => msg!("Error: Specified pool mint account is wrong"),
-            FarmPoolError::NotStarted => msg!("Error: The farm was not started yet"),
-            FarmPoolError::FarmEnded => msg!("Error: The farm was ended"),
+            FarmPoolError::NotStarted => msg!("Error: The farm has not started yet"),
+            FarmPoolError::FarmEnded => msg!("Error: The farm ended"),
             FarmPoolError::ZeroDepositBalance => msg!("Error: Zero deposit balance"),
             FarmPoolError::NotAllowed => msg!("Error: This farm is not allowed yet. The farm creator has to pay additional fee"),
             FarmPoolError::InvalidFarmFee => msg!("Error: Wrong Farm Fee. Farm fee has to be {}CRP",FARM_FEE),
             FarmPoolError::WrongAmmId => msg!("Error: Wrong Amm Id"),
             FarmPoolError::WrongFarmPool => msg!("Error: Wrong Farm pool"),
             FarmPoolError::WrongCreator => msg!("Error: Not allowed to create the farm by this creator"),
+            FarmPoolError::WrongPeriod => msg!("Error: wrong start time and end time"),
         }
     }
 } 

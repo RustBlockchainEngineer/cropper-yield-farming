@@ -13,7 +13,7 @@ use {
     },
 };
 
-/// Instructions supported by the StakePool program.
+/// Instructions supported by the FarmPool program.
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, BorshSerialize, BorshDeserialize, BorshSchema)]
 pub enum FarmPoolInstruction {
@@ -273,7 +273,7 @@ pub fn add_reward(
     Instruction {
         program_id: *farm_program_id,
         accounts,
-        data: FarmPoolInstruction::Deposit(amount).try_to_vec().unwrap(),
+        data: FarmPoolInstruction::AddReward(amount).try_to_vec().unwrap(),
     }
 }
 
@@ -301,6 +301,6 @@ pub fn pay_farm_fee(
     Instruction {
         program_id: *farm_program_id,
         accounts,
-        data: FarmPoolInstruction::Deposit(amount).try_to_vec().unwrap(),
+        data: FarmPoolInstruction::PayFarmFee(amount).try_to_vec().unwrap(),
     }
 }

@@ -8,7 +8,9 @@ use {
         pubkey::{Pubkey},
     },
 };
-
+use crate::constant::{
+    REWARD_MULTIPLER,
+};
 /// Farm Pool struct
 #[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
@@ -61,12 +63,12 @@ impl FarmPool {
     /// get current pending reward amount for a user
     pub fn pending_rewards(&self, user_info:&mut UserInfo) -> u64{
         let reward_per_share_net: u64 = self.reward_per_share_net;
-        return user_info.deposit_balance * reward_per_share_net / 1000000000 - user_info.reward_debt;
+        return user_info.deposit_balance * reward_per_share_net / REWARD_MULTIPLER - user_info.reward_debt;
     }
 
     /// get total reward amount for a user so far
     pub fn get_new_reward_debt(&self, user_info:&UserInfo) -> u64{
-        return user_info.deposit_balance * self.reward_per_share_net / 1000000000;
+        return user_info.deposit_balance * self.reward_per_share_net / REWARD_MULTIPLER;
     }
     
 }

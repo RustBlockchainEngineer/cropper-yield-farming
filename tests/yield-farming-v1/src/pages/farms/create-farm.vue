@@ -464,7 +464,7 @@ import { AMM_ASSOCIATED_SEED, FARM_PROGRAM_ID, LIQUIDITY_POOL_PROGRAM_ID_V4, SIT
 import { getBigNumber } from '@/utils/layouts'
 import { cloneDeep, get } from 'lodash-es'
 import moment from 'moment'
-import {YieldFarm} from '@/utils/farm'
+import { YieldFarm} from '@/utils/farm'
 import { getPoolListByTokenMintAddresses, LIQUIDITY_POOLS,LiquidityPoolInfo } from '@/utils/pools'
 const Step = Steps.Step
 
@@ -693,6 +693,7 @@ export default class CreatePool extends Vue {
       return;
     }
     try{
+      // [test]
       let createdFarm = await YieldFarm.createFarmWithParams(
         connection,
         wallet,
@@ -702,6 +703,7 @@ export default class CreatePool extends Vue {
         startTimestamp,
         endTimestamp
       );
+
       await this.delay(500);
     
       // wait for the synchronization

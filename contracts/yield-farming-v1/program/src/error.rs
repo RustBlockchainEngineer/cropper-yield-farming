@@ -71,6 +71,9 @@ pub enum FarmPoolError {
     /// Wrong Creator
     #[error("Wrong creator")]
     WrongCreator,
+    /// Wrong Period
+    #[error("Wrong Period")]
+    WrongPeriod,
 }
 impl From<FarmPoolError> for ProgramError {
     fn from(e: FarmPoolError) -> Self {

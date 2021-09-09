@@ -22,7 +22,7 @@ import { FARM_PROGRAM_ID } from './ids';
 import BigNumber from 'bignumber.js';
 
 // for unit tests
-export const UNIT_TEST_MODE = false;
+export const UNIT_TEST_MODE = true;
 
 export const PAY_FARM_FEE = 5000;
 

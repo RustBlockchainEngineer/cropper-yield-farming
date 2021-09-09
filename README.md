@@ -176,3 +176,6 @@ To point back to the local cluster:
 ```bash
 $ solana config set --url localhost
 ```
+
+# Client side code
+client/utils/farm.ts

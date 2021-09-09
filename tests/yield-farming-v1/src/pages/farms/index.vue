@@ -244,7 +244,7 @@ import { getBigNumber } from '@/utils/layouts'
 import { LiquidityPoolInfo, LIQUIDITY_POOLS } from '@/utils/pools'
 import moment from 'moment'
 import { TOKEN_PROGRAM_ID, u64 } from '@solana/spl-token'
-import { PAY_FARM_FEE, YieldFarm } from '@/utils/farm'
+import { PAY_FARM_FEE, YieldFarm,UNIT_TEST_MODE} from '@/utils/farm'
 import { PublicKey } from '@solana/web3.js'
 import { DEVNET_MODE, FARM_PROGRAM_ID } from '@/utils/ids'
 import { TOKENS } from '@/utils/tokens'
@@ -489,6 +489,32 @@ export default Vue.extend({
           description: '',
           duration: 0
         })
+        if(UNIT_TEST_MODE){
+          // zero add
+          try{
+            await fetchedFarm.addReward(
+              wallet,
+              userRwardTokenPubkey,
+              0 * Math.pow(10,this.farmInfo.reward.decimals)
+            )
+          }
+          catch{
+            console.log("add reward - zero add passed")
+          }
+          // minus add
+          try{
+            await fetchedFarm.addReward(
+              wallet,
+              userRwardTokenPubkey,
+              -10 * Math.pow(10,this.farmInfo.reward.decimals)
+            )
+          }
+          catch{
+            console.log("add reward - minus add passed")
+          }
+          
+        }
+        // [test]
         fetchedFarm.addReward(
           wallet,
           userRwardTokenPubkey,
@@ -566,6 +592,45 @@ export default Vue.extend({
           description: '',
           duration: 0
         })
+        if(UNIT_TEST_MODE){
+          // zero pay
+          try{
+            await fetchedFarm.payFarmFee(
+              wallet,
+              userUSDCTokenPubkey,
+              0 * Math.pow(10,usdcCoin.decimals)
+            )
+          }
+          catch{
+            console.log("pay zero fee passed")
+          }
+
+          // big pay
+          try{
+            await fetchedFarm.payFarmFee(
+              wallet,
+              userUSDCTokenPubkey,
+              10000 * Math.pow(10,usdcCoin.decimals)
+            )
+            console.log("pay 10000 fee passed")
+          }
+          catch{
+            
+          }
+
+          // minus pay
+          try{
+            await fetchedFarm.payFarmFee(
+              wallet,
+              userUSDCTokenPubkey,
+              -10 * Math.pow(10,usdcCoin.decimals)
+            )
+          }
+          catch{
+            console.log("pay minus fee passed")
+          }
+        }
+        // [test]
         fetchedFarm.payFarmFee(
           wallet,
           userUSDCTokenPubkey,
@@ -673,7 +738,38 @@ export default Vue.extend({
           console.log("added lp amount is 0")
           return;
         }
+        if(UNIT_TEST_MODE){
+          // test for zero amount
+          try{
+            await deposit(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, 0);
+          }
+          catch{
+            console.log("deposit - test for zero amount failed");
+          }
+          
+          try{
+            await deposit(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, -20);
+            console.log("deposit - test for minus amount failed");
+          }
+          catch{
+            
+          }
 
+          try{
+            await deposit(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, 100000);
+          }
+          catch{
+            console.log("deposit - amount=100000 failed");
+          }
+
+          try{
+            await deposit(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, 0.0001);
+          }
+          catch{
+            console.log("deposit - amount=0.0001 failed");
+          }
+        }
+        // [test]
         deposit(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, amount)
         .then((txid) => {
           this.$notify.info({
@@ -735,7 +831,7 @@ export default Vue.extend({
       this.unstakeModalOpening = true
     },
 
-    unstake(amount: string) {
+    async unstake(amount: string) {
       this.unstaking = true
 
       const conn = this.$web3
@@ -757,7 +853,38 @@ export default Vue.extend({
         description: '',
         duration: 0
       })
+      if(UNIT_TEST_MODE){
+          // test for zero amount
+          try{
+            await withdraw(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, 0);
+          }
+          catch{
+            console.log("withdraw - test for zero amount failed");
+          }
+          
+          try{
+            await withdraw(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, -20);
+            console.log("withdraw - test for minus amount failed");
+          }
+          catch{
+            
+          }
 
+          try{
+            await withdraw(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, 100000);
+          }
+          catch{
+            console.log("withdraw - amount=100000 failed");
+          }
+
+          try{
+            await withdraw(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, 0.0001);
+          }
+          catch{
+            console.log("withdraw - amount=0.0001 failed");
+          }
+        }
+      // [test]
       withdraw(conn, wallet, this.farmInfo, lpAccount, rewardAccount, infoAccount, amount)
         .then(async (txid) => {
           this.$notify.info({
