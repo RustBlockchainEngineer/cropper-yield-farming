@@ -74,6 +74,18 @@ pub enum FarmPoolError {
     /// Wrong Period
     #[error("Wrong Period")]
     WrongPeriod,
+
+    /// Invalid Owner
+    #[error("Invalid Owner")]
+    InvalidOwner,
+
+    /// Invalid Signer
+    #[error("Invalid Signer")]
+    InvalidSigner,
+
+    /// not enough amount
+    #[error("not enough amount")]
+    NotEnoughBalance,
 }
 impl From<FarmPoolError> for ProgramError {
     fn from(e: FarmPoolError) -> Self {

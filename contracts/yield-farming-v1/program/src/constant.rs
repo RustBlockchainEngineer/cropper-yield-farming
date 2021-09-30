@@ -17,6 +17,8 @@ pub const HARVEST_FEE_DENOMINATOR:u64 = 1000;
 /// This includes harvest fee
 /// So this wallet address should have all token accounts of registered token-list
 pub const FEE_OWNER:&str = if DEVNET_MODE {"BRmxAJ3ThceU2SXt6weyXarRNvAwZUtKuKbzSRneRxJn"} else {"4GJ3z4skEHJADz3MVeNYBg4YV8H27rBQey2YYdiPC8PA"};
+pub const TOKEN_PROGRAM_ID:&str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+pub const AMM_PROGRAM_ID:&str = if DEVNET_MODE {"7ZZJNL4xD8db6yrT46SeMFZXcVr9MLepGpEtnKW2k6sW"} else {"7ZZJNL4xD8db6yrT46SeMFZXcVr9MLepGpEtnKW2k6sW"};
 
 /// This is allowed wallet address to create specified farms by site owner
 /// Specified farms are SOL-USDC, SOL-CRP, USDT-CRP, USDC-CRP, ETH-USDC, ETH-CRP

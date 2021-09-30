@@ -95,8 +95,9 @@ $ npm install
 ```
 
 ### Build the on-chain program
-copy/clone amm project in the same folder
-because this program uses amm project as crate
+
+There is both a Rust and C version of the on-chain program, whichever is built
+last will be the one used when running the example.
 
 ```bash
 $ npm run build:yf
@@ -176,6 +177,3 @@ To point back to the local cluster:
 ```bash
 $ solana config set --url localhost
 ```
-
-# Client side code
-client/utils/farm.ts
