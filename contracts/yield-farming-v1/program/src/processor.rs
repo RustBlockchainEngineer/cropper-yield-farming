@@ -120,6 +120,11 @@ impl Processor {
             return Err(FarmPoolError::SignatureMissing.into());
         }
 
+        // check if given farm was initialized already
+        if !Self::is_zero_account(farm_id_info) {
+            return Err(FarmPoolError::AlreadyInUse.into());
+        }
+
         // check if end time is later than start time
         if end_timestamp <= start_timestamp {
             return Err(FarmPoolError::WrongPeriod.into());
