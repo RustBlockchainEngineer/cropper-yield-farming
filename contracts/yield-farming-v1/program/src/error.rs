@@ -86,6 +86,10 @@ pub enum FarmPoolError {
     /// not enough amount
     #[error("not enough amount")]
     NotEnoughBalance,
+
+    /// invalid token account
+    #[error("Invalid token account")]
+    InvalidTokenAccount,
 }
 impl From<FarmPoolError> for ProgramError {
     fn from(e: FarmPoolError) -> Self {

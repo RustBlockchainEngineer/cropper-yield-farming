@@ -79,6 +79,7 @@ impl Processor {
         start_timestamp: u64,       // start time of this farm
         end_timestamp: u64,         // end time of this farm
     ) -> ProgramResult {
+        msg!("initializing ...");
         // start initializeing this farm pool ...
 
         // get all account informations from accounts array by using iterator
@@ -175,9 +176,11 @@ impl Processor {
         
         // CRP token pairing flag
         let mut crp_token_pairing = 0;
+        let mut usdc_token_pairing = 0;
 
         // CRP token mint address
         let crp_pubkey = Pubkey::from_str(CRP_MINT_ADDRESS).unwrap();
+        let usdc_pubkey = Pubkey::from_str(USDC_MINT_ADDRESS).unwrap();
 
         // other token mint address to check token pairing
         let mut other_pubkey = *amm_swap.token_a_mint();
@@ -192,6 +195,8 @@ impl Processor {
             // this is crp token pair
             crp_token_pairing = 1;
         }
+
+
 
         // check if this creator can create "locked farms" specified by site owner
         if crp_token_pairing == 1 {
@@ -208,10 +213,17 @@ impl Processor {
                 }
         }
 
+        if *amm_swap.token_a_mint() == usdc_pubkey || *amm_swap.token_b_mint() == usdc_pubkey {
+            // this is usdc token pair
+            usdc_token_pairing = 1;
+        }
+        
+        let is_allowed = if crp_token_pairing==0 && usdc_token_pairing==0 {0} else {1};
+        
         // Initialize farm account data
         
         // if not CRP token pairing,this farm is not allowed until creator pays farm fee
-        farm_pool.is_allowed = crp_token_pairing;
+        farm_pool.is_allowed = is_allowed;
 
         // owner of this farm - creator
         farm_pool.owner = *creator_info.key;
@@ -265,6 +277,7 @@ impl Processor {
         accounts: &[AccountInfo],
         amount: u64,
     ) -> ProgramResult {
+        msg!("depositing ...");
         // get account informations
         let account_info_iter = &mut accounts.iter();
 
@@ -296,7 +309,7 @@ impl Processor {
         let pool_lp_mint_info = next_account_info(account_info_iter)?;
 
         // fee owner wallet account information to collect fees such as harvest fee
-        let fee_owner_info = next_account_info(account_info_iter)?;
+        let reward_ata_info = next_account_info(account_info_iter)?;
 
         // spl-token program address
         let token_program_info = next_account_info(account_info_iter)?;
@@ -330,11 +343,7 @@ impl Processor {
         if farm_pool.is_allowed == 0 {
             return Err(FarmPoolError::NotAllowed.into());
         }
-
-        // farm account - check fee owner
-        if farm_pool.fee_owner != *fee_owner_info.key {
-            return Err(FarmPoolError::InvalidFeeAccount.into());
-        }
+        
 
         // farm account - This farm was not started yet
         if cur_timestamp < farm_pool.start_timestamp {
@@ -388,6 +397,12 @@ impl Processor {
         let pool_lp_token_data = Account::unpack_from_slice(&pool_lp_token_account_info.data.borrow())?;
         let user_reward_token_data = Account::unpack_from_slice(&user_reward_token_account_info.data.borrow())?;
         let pool_reward_token_data = Account::unpack_from_slice(&pool_reward_token_account_info.data.borrow())?;
+        let reward_ata_data = Account::unpack_from_slice(&reward_ata_info.data.borrow())?;
+
+        // farm account - check fee owner
+        if farm_pool.fee_owner != reward_ata_data.owner {
+            return Err(FarmPoolError::InvalidFeeAccount.into());
+        }
 
         // token account - check if user token's owner is depositor
         if  user_lp_token_data.owner != *depositor_info.key ||
@@ -433,11 +448,12 @@ impl Processor {
                 let harvest_fee = pending * HARVEST_FEE_NUMERATOR / HARVEST_FEE_DENOMINATOR; 
                 
                 // transfer harvest fee to fee owner
+                msg!("transfer harvest fee to fee owner {}, {}",harvest_fee, pool_reward_token_data.amount);
                 Self::token_transfer(
                     farm_id_info.key,
                     token_program_info.clone(), 
                     pool_reward_token_account_info.clone(), 
-                    fee_owner_info.clone(), 
+                    reward_ata_info.clone(), 
                     authority_info.clone(), 
                     farm_pool.nonce, 
                     harvest_fee
@@ -445,7 +461,7 @@ impl Processor {
 
                 // user's real pending amount
                 let _pending = pending - harvest_fee;
-
+                msg!("transfer pending reward amount from reward pool to user reward token account {}",_pending);
                 // transfer pending reward amount from reward pool to user reward token account
                 Self::token_transfer(
                     farm_id_info.key,
@@ -496,7 +512,7 @@ impl Processor {
         accounts: &[AccountInfo],
         amount: u64,
     ) -> ProgramResult {
-
+        msg!("withdrawing ...");
         // get account informations
         let account_info_iter = &mut accounts.iter();
 
@@ -528,7 +544,7 @@ impl Processor {
         let pool_lp_mint_info = next_account_info(account_info_iter)?;
 
         // fee owner wallet account information to collect fees such as harvest fee
-        let fee_owner_info = next_account_info(account_info_iter)?;
+        let reward_ata_info = next_account_info(account_info_iter)?;
 
         // spl-token program address
         let token_program_info = next_account_info(account_info_iter)?;
@@ -541,7 +557,6 @@ impl Processor {
 
         // get current timestamp(second)
         let cur_timestamp: u64 = clock.unix_timestamp as u64;
-
         // borrow farm pool account data
         let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
 
@@ -552,7 +567,6 @@ impl Processor {
         if !withdrawer_info.is_signer {
             return Err(FarmPoolError::InvalidSigner.into());
         }
-
         // farm account - check if the given program address and farm account are correct
         if *authority_info.key != Self::authority_id(program_id, farm_id_info.key, farm_pool.nonce)? {
             return Err(FarmPoolError::InvalidProgramAddress.into());
@@ -561,11 +575,6 @@ impl Processor {
         // farm account - check if this farm was allowed already
         if farm_pool.is_allowed == 0 {
             return Err(FarmPoolError::NotAllowed.into());
-        }
-
-        // farm account - check fee owner
-        if farm_pool.fee_owner != *fee_owner_info.key {
-            return Err(FarmPoolError::InvalidFeeAccount.into());
         }
 
         // farm account - This farm was not started yet
@@ -577,7 +586,6 @@ impl Processor {
         if user_info_account_info.owner != program_id {
             return Err(FarmPoolError::InvalidOwner.into());
         }
-
         // user info account - check if this is for given farm account
         if user_info.farm_id != *farm_id_info.key {
             return Err(FarmPoolError::InvalidOwner.into());
@@ -587,7 +595,6 @@ impl Processor {
         if user_info.wallet != *withdrawer_info.key {
             return Err(FarmPoolError::InvalidOwner.into());
         }
-
         // token account - check if owner is saved token program
         if  *user_lp_token_account_info.owner != farm_pool.token_program_id ||
             *pool_lp_token_account_info.owner != farm_pool.token_program_id ||
@@ -606,7 +613,13 @@ impl Processor {
         let pool_lp_token_data = Account::unpack_from_slice(&pool_lp_token_account_info.data.borrow())?;
         let user_reward_token_data = Account::unpack_from_slice(&user_reward_token_account_info.data.borrow())?;
         let pool_reward_token_data = Account::unpack_from_slice(&pool_reward_token_account_info.data.borrow())?;
+        let reward_ata_data = Account::unpack_from_slice(&reward_ata_info.data.borrow())?;
 
+        // farm account - check fee owner
+        if farm_pool.fee_owner != reward_ata_data.owner {
+            return Err(FarmPoolError::InvalidFeeAccount.into());
+        }
+        
         // token account - check if user token's owner is depositor
         if  user_lp_token_data.owner != *withdrawer_info.key ||
             user_reward_token_data.owner != *withdrawer_info.key ||
@@ -618,6 +631,11 @@ impl Processor {
         // token account - check if user has enough token amount
         if pool_lp_token_data.amount < amount {
             return Err(FarmPoolError::NotEnoughBalance.into());
+        }
+
+        if  *pool_reward_token_account_info.key != farm_pool.pool_reward_token_account ||
+            *pool_lp_token_account_info.key != farm_pool.pool_lp_token_account {
+            return Err(FarmPoolError::InvalidTokenAccount.into());
         }
 
         // pool mint - check if pool mint is current program's mint address
@@ -667,7 +685,7 @@ impl Processor {
                     farm_id_info.key,
                     token_program_info.clone(), 
                     pool_reward_token_account_info.clone(), 
-                    fee_owner_info.clone(), 
+                    reward_ata_info.clone(), 
                     authority_info.clone(), 
                     farm_pool.nonce, 
                     harvest_fee
@@ -731,7 +749,7 @@ impl Processor {
         accounts: &[AccountInfo],
         amount: u64,
     ) -> ProgramResult {
-
+        msg!("adding reward ...");
         // get account informations
         let account_info_iter = &mut accounts.iter();
 
@@ -825,7 +843,6 @@ impl Processor {
             return Err(FarmPoolError::InvalidProgramAddress.into());
         }
 
-        
 
         // add reward
         if amount > 0 {
@@ -870,6 +887,7 @@ impl Processor {
         accounts: &[AccountInfo],
         amount: u64,
     ) -> ProgramResult {
+        msg!("paying farm fee ...");
 
         // get account informations
         let account_info_iter = &mut accounts.iter();
@@ -887,7 +905,7 @@ impl Processor {
         let user_usdc_token_account_info = next_account_info(account_info_iter)?;
 
         // fee owner wallet account to collect all fees
-        let fee_owner_info = next_account_info(account_info_iter)?;
+        let usdc_ata_info = next_account_info(account_info_iter)?;
 
         // spl-token program address
         let token_program_info = next_account_info(account_info_iter)?;
@@ -912,17 +930,18 @@ impl Processor {
             return Err(FarmPoolError::InvalidSigner.into());
         }
 
-        // farm account - check fee owner
-        if farm_pool.fee_owner != *fee_owner_info.key {
-            return Err(FarmPoolError::InvalidFeeAccount.into());
-        }
-
         // token account - check if owner is saved token program
         if  *user_usdc_token_account_info.owner != farm_pool.token_program_id {
                 return Err(FarmPoolError::InvalidOwner.into());
         }
 
         let user_usdc_token_data = Account::unpack_from_slice(&user_usdc_token_account_info.data.borrow())?;
+        let usdc_ata_data = Account::unpack_from_slice(&usdc_ata_info.data.borrow())?;
+
+        // farm account - check fee owner
+        if farm_pool.fee_owner != usdc_ata_data.owner {
+            return Err(FarmPoolError::InvalidFeeAccount.into());
+        }
 
         // token account - check if user token's owner is depositor
         if  user_usdc_token_data.owner != *creator_info.key {
@@ -950,7 +969,7 @@ impl Processor {
             farm_id_info.key,
             token_program_info.clone(), 
             user_usdc_token_account_info.clone(), 
-            fee_owner_info.clone(), 
+            usdc_ata_info.clone(), 
             creator_info.clone(), 
             farm_pool.nonce, 
             amount
@@ -1068,6 +1087,8 @@ impl PrintProgramError for FarmPoolError {
             FarmPoolError::InvalidOwner => msg!("Error: invalid owner"),
             FarmPoolError::InvalidSigner => msg!("Error: invalid signer"),
             FarmPoolError::NotEnoughBalance => msg!("Error: Not enough balance"),
+            FarmPoolError::InvalidTokenAccount => msg!("Error: Invalid token account"),
+            
         }
     }
 } 

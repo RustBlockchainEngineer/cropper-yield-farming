@@ -7,7 +7,10 @@ use {
     solana_program::{
         pubkey::{Pubkey},
     },
+    spl_math::{precise_number::PreciseNumber},
+    std::convert::TryFrom,
 };
+
 use crate::constant::{
     REWARD_MULTIPLER,
 };
@@ -62,15 +65,24 @@ pub struct FarmPool {
 impl FarmPool {
     /// get current pending reward amount for a user
     pub fn pending_rewards(&self, user_info:&mut UserInfo) -> u64{
-        let reward_per_share_net: u64 = self.reward_per_share_net;
-        return user_info.deposit_balance * reward_per_share_net / REWARD_MULTIPLER - user_info.reward_debt;
+        let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).unwrap();
+        let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).unwrap();
+        let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).unwrap();
+        let reward_debt = PreciseNumber::new(user_info.reward_debt as u128).unwrap();
+
+        let result = deposit_balance.checked_mul(&reward_per_share_net).unwrap().checked_div(&reward_multipler).unwrap().checked_sub(&reward_debt).unwrap();
+        return u64::try_from(result.to_imprecise().unwrap()).unwrap();
     }
 
     /// get total reward amount for a user so far
     pub fn get_new_reward_debt(&self, user_info:&UserInfo) -> u64{
-        return user_info.deposit_balance * self.reward_per_share_net / REWARD_MULTIPLER;
+        let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).unwrap();
+        let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).unwrap();
+        let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).unwrap();
+
+        let result = deposit_balance.checked_mul(&reward_per_share_net).unwrap().checked_div(&reward_multipler).unwrap();
+        return u64::try_from(result.to_imprecise().unwrap()).unwrap();
     }
-    
 }
 
 /// User information struct

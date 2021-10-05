@@ -20,7 +20,7 @@ num-derive = "0.3"
 num-traits = "0.2"
 thiserror = "1.0"
 spl-token = { version = "3.2.0", features = [ "no-entrypoint" ] }
-
+spl-math = { version = "0.1", features = [ "no-entrypoint" ] }
 cropper-liquidity-pool = { version = "2.1.0", path = "../amm-cropper-v1/cropper-lp/program", features = [ "no-entrypoint" ] }
 
 [dev-dependencies]
@@ -28,5 +28,5 @@ solana-program-test = "1.7.8"
 solana-sdk = "1.7.8"
 
 [lib]
-name = "farmprogram_v1"
+name = "farmprogram_test"
 crate-type = ["cdylib", "lib"]
