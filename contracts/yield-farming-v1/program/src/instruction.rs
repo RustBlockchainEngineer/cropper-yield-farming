@@ -16,7 +16,43 @@ use {
 /// Instructions supported by the FarmPool program.
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, BorshSerialize, BorshDeserialize, BorshSchema)]
-pub enum FarmPoolInstruction {
+pub enum FarmInstruction {
+    ///   Set program data
+    ///   [w] - writable, [s] - signer
+    /// 
+    ///   0. `[w]` program account.
+    ///   1. `[s]` super owner of this program
+    ///   2. `[]` new super owner
+    ///   3. `[]` fee owner
+    ///   4. `[]` allowed creator
+    ///   5. `[]` AMM program id
+    ///   6. `[]` farm fee
+    ///   7. `[]` harvest fee numerator
+    ///   8. `[]` harvest fee denominator
+    ///   9. `[]` program id
+    SetProgramData {
+        #[allow(dead_code)]
+        super_owner: Pubkey,
+
+        #[allow(dead_code)]
+        fee_owner: Pubkey,
+
+        #[allow(dead_code)]
+        allowed_creator: Pubkey,
+
+        #[allow(dead_code)]
+        amm_program_id: Pubkey,
+
+        #[allow(dead_code)]
+        farm_fee: u64,
+
+        #[allow(dead_code)]
+        harvest_fee_numerator: u64,
+        
+        #[allow(dead_code)]
+        harvest_fee_denominator: u64,
+    },
+
     ///   Initializes a new FarmPool.
     ///   These represent the parameters that will be included from client side
     ///   [w] - writable, [s] - signer
@@ -31,12 +67,12 @@ pub enum FarmPoolInstruction {
     ///   5. `[]` Pool token mint address
     ///   6. `[]` Reward token mint address
     ///   7. `[]` Amm Id
-    ///   8. `[]` Token program id
+    ///   8. `[]` farm program data id
     ///   9. `[]` nonce
-    ///   10. `[]` Farm program id
-    ///   11.'[]' start timestamp. this reflects that the farm starts at this time
-    ///   12.'[]' end timestamp. this reflects that the farm ends at this time
-    Initialize {
+    ///   10.'[]' start timestamp. this reflects that the farm starts at this time
+    ///   11.'[]' end timestamp. this reflects that the farm ends at this time
+    ///   12. `[]` program id
+    InitializeFarm {
         #[allow(dead_code)]
         /// nonce
         nonce: u8,
@@ -58,16 +94,17 @@ pub enum FarmPoolInstruction {
     ///   1. `[]` authority of this farm pool
     ///   2. `[s]` Depositor
     ///   3. `[]` User Farming Information Account
-    ///   4. `[w]` User transfer authority.
-    ///   5. `[]` User LP token account
+    ///   4. `[]` User LP token account
+    ///   5. `[]` Pool LP token account
     ///   6. `[]` User reward token account
-    ///   7. `[]` Pool LP token account
-    ///   8. `[]` Pool reward token account
-    ///   9. `[]` Pool LP token mint
-    ///   10. `[]` Pool reward token mint
+    ///   7. `[]` Pool reward token account
+    ///   8. `[]` Pool LP token mint
+    ///   9. `[]` fee reward ata account
+    ///   10. `[]` farm program data id
     ///   11. `[]` Token program id
-    ///   12. `[]` Farm program id
+    ///   12. `[]` clock sysvar
     ///   13. `[]` amount
+    ///   14. `[]` program id
     Deposit(u64),
 
     ///   Unstake LP tokens from this farm pool
@@ -77,29 +114,32 @@ pub enum FarmPoolInstruction {
     ///   1. `[]` authority of this farm pool
     ///   2. `[s]` Withdrawer
     ///   3. `[]` User Farming Information Account
-    ///   4. `[w]` User transfer authority.
-    ///   5. `[]` User LP token account
+    ///   4. `[]` User LP token account
+    ///   5. `[]` Pool LP token account
     ///   6. `[]` User reward token account
-    ///   7. `[]` Pool LP token account
-    ///   8. `[]` Pool reward token account
-    ///   9. `[]` Pool LP token mint
-    ///   10. `[]` Pool reward token mint
+    ///   7. `[]` Pool reward token account
+    ///   8. `[]` Pool LP token mint
+    ///   9. `[]` fee reward ata account
+    ///   10. `[]` farm program data id
     ///   11. `[]` Token program id
-    ///   12. `[]` Farm program id
+    ///   12. `[]` clock sysvar
     ///   13. `[]` amount
+    ///   14. `[]` program id
     Withdraw(u64),
 
     ///   Creator can add reward to his farm 
     /// 
     ///   0. `[w]` FarmPool to add reward to.
     ///   1. `[]` authority of this farm pool
-    ///   2. `[s]` depositor
-    ///   3. `[w]` User transfer authority.
-    ///   4. `[]` User reward token account
-    ///   5. `[]` Pool reward token account
-    ///   6. `[]` Token program id
-    ///   7. `[]` Farm program id
-    ///   8. `[]` amount
+    ///   2. `[s]` creator
+    ///   3. `[]` User reward token account
+    ///   4. `[]` Pool reward token account
+    ///   5. `[]` Pool lp token mint
+    ///   6. `[]` farm program data id
+    ///   7. `[]` token program id
+    ///   8. `[]` clock sysvar
+    ///   9. `[]` amount
+    ///   10. `[]` program id
     AddReward(u64),
     
     ///   Creator has to pay farm fee (if not CRP token pairing)
@@ -107,21 +147,59 @@ pub enum FarmPoolInstruction {
     /// 
     ///   0. `[w]` FarmPool to pay farm fee.
     ///   1. `[]` authority of this farm pool
-    ///   2. `[s]` payer
-    ///   3. `[w]` User transfer authority.
-    ///   4. `[]` User CRP token account
-    ///   5. `[]` Fee Owner
-    ///   6. `[]` Token program id
-    ///   7. `[]` Farm program id
-    ///   8. `[]` amount
+    ///   2. `[s]` creator
+    ///   3. `[]` User USDC token account
+    ///   4. `[]` fee usdc ata
+    ///   5. `[]` farm program data account
+    ///   6. `[]` token program id
+    ///   7. `[]` amount
+    ///   8. `[]` program id
     PayFarmFee(u64),
 }
 
 // below functions are used to test above instructions in the rust test side
 // Function's parameters
 
-/// Creates an 'initialize' instruction.
-pub fn initialize(
+
+/// Creates an 'SetProgramData' instruction.
+pub fn initialize_program(
+    program_data_account: &Pubkey,
+    super_owner: &Pubkey,
+    new_super_owner: Pubkey,
+    fee_owner: Pubkey,
+    allowed_creator: Pubkey,
+    amm_program_id: Pubkey,
+    farm_fee: u64,
+    harvest_fee_numerator: u64,
+    harvest_fee_denominator: u64,
+    program_id: &Pubkey,
+) -> Instruction {
+    
+    let init_data = FarmInstruction::SetProgramData{
+        super_owner:new_super_owner,
+        fee_owner,
+        allowed_creator,
+        amm_program_id,
+        farm_fee,
+        harvest_fee_numerator,
+        harvest_fee_denominator
+    };
+    
+    let data = init_data.try_to_vec().unwrap();
+    let accounts = vec![
+        AccountMeta::new(*program_data_account, false),
+        AccountMeta::new(*super_owner, true),
+    ];
+    Instruction {
+        program_id: *program_id,
+        accounts,
+        data,
+    }
+}
+
+
+/// Creates an 'InitializeFarm' instruction.
+pub fn initialize_farm(
     farm_id: &Pubkey,
     authority: &Pubkey,
     owner: &Pubkey,
@@ -130,14 +208,14 @@ pub fn initialize(
     pool_mint_address: &Pubkey,
     reward_mint_address: &Pubkey,
     amm_id: &Pubkey,
-    token_program_id: &Pubkey,
+    program_data_account: &Pubkey,
     nonce: u8,
-    farm_program_id: &Pubkey,
     start_timestamp: u64,
     end_timestamp: u64,
+    program_id: &Pubkey,
 ) -> Instruction {
     
-    let init_data = FarmPoolInstruction::Initialize{
+    let init_data = FarmInstruction::InitializeFarm{
         nonce,
         start_timestamp,
         end_timestamp
@@ -147,16 +225,16 @@ pub fn initialize(
     let accounts = vec![
         AccountMeta::new(*farm_id, false),
         AccountMeta::new(*authority, false),
-        AccountMeta::new_readonly(*owner, false),
+        AccountMeta::new_readonly(*owner, true),
         AccountMeta::new(*pool_lp_token_account, false),
         AccountMeta::new(*pool_reward_token_account, false),
         AccountMeta::new_readonly(*pool_mint_address, false),
         AccountMeta::new_readonly(*reward_mint_address, false),
         AccountMeta::new_readonly(*amm_id, false),
-        AccountMeta::new_readonly(*token_program_id, false),
+        AccountMeta::new_readonly(*program_data_account, false),
     ];
     Instruction {
-        program_id: *farm_program_id,
+        program_id: *program_id,
         accounts,
         data,
     }
@@ -170,15 +248,15 @@ pub fn deposit(
     owner: &Pubkey,
     user_info_account: &Pubkey,
     user_lp_token_account: &Pubkey,
-    user_reward_token_account: &Pubkey,
     pool_lp_token_account: &Pubkey,
+    user_reward_token_account: &Pubkey,
     pool_reward_token_account: &Pubkey,
     pool_lp_mint: &Pubkey,
-    pool_reward_mint: &Pubkey,
-    fee_owner: &Pubkey,
+    fee_reward_ata: &Pubkey,
+    program_data_account: &Pubkey,
     token_program_id: &Pubkey,
-    farm_program_id: &Pubkey,
     amount: u64,
+    program_id: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*farm_id, false),
@@ -190,15 +268,15 @@ pub fn deposit(
         AccountMeta::new(*user_reward_token_account, false),
         AccountMeta::new(*pool_reward_token_account, false),
         AccountMeta::new(*pool_lp_mint, false),
-        AccountMeta::new(*pool_reward_mint, false),
-        AccountMeta::new(*fee_owner, false),
+        AccountMeta::new(*fee_reward_ata, false),
+        AccountMeta::new(*program_data_account, false),
         AccountMeta::new(*token_program_id, false),
         AccountMeta::new_readonly(sysvar::clock::id(), false),
     ];
     Instruction {
-        program_id: *farm_program_id,
+        program_id: *program_id,
         accounts,
-        data: FarmPoolInstruction::Deposit(amount).try_to_vec().unwrap(),
+        data: FarmInstruction::Deposit(amount).try_to_vec().unwrap(),
     }
 }
 
@@ -209,15 +287,15 @@ pub fn withdraw(
     owner: &Pubkey,
     user_info_account: &Pubkey,
     user_lp_token_account: &Pubkey,
-    user_reward_token_account: &Pubkey,
     pool_lp_token_account: &Pubkey,
+    user_reward_token_account: &Pubkey,
     pool_reward_token_account: &Pubkey,
     pool_lp_mint_info: &Pubkey,
-    reward_mint_info: &Pubkey,
-    fee_owner: &Pubkey,
+    fee_reward_ata: &Pubkey,
+    program_data_account: &Pubkey,
     token_program_id: &Pubkey,
-    farm_program_id: &Pubkey,
     amount: u64,
+    program_id: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*farm_id, false),
@@ -229,15 +307,15 @@ pub fn withdraw(
         AccountMeta::new(*user_reward_token_account, false),
         AccountMeta::new(*pool_reward_token_account, false),
         AccountMeta::new(*pool_lp_mint_info, false),
-        AccountMeta::new(*reward_mint_info, false),
-        AccountMeta::new(*fee_owner, false),
+        AccountMeta::new(*fee_reward_ata, false),
+        AccountMeta::new(*program_data_account, false),
         AccountMeta::new(*token_program_id, false),
         AccountMeta::new_readonly(sysvar::clock::id(), false),
     ];
     Instruction {
-        program_id: *farm_program_id,
+        program_id: *program_id,
         accounts,
-        data: FarmPoolInstruction::Withdraw(amount).try_to_vec().unwrap(),
+        data: FarmInstruction::Withdraw(amount).try_to_vec().unwrap(),
     }
 }
 
@@ -250,9 +328,10 @@ pub fn add_reward(
     user_reward_token_account: &Pubkey,
     pool_reward_token_account: &Pubkey,
     pool_lp_mint_info: &Pubkey,
+    program_data_account: &Pubkey,
     token_program_id: &Pubkey,
-    farm_program_id: &Pubkey,
     amount: u64,
+    program_id: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*farm_id, false),
@@ -261,13 +340,14 @@ pub fn add_reward(
         AccountMeta::new(*user_reward_token_account, false),
         AccountMeta::new(*pool_reward_token_account, false),
         AccountMeta::new(*pool_lp_mint_info, false),
+        AccountMeta::new(*program_data_account, false),
         AccountMeta::new(*token_program_id, false),
         AccountMeta::new_readonly(sysvar::clock::id(), false),
     ];
     Instruction {
-        program_id: *farm_program_id,
+        program_id: *program_id,
         accounts,
-        data: FarmPoolInstruction::AddReward(amount).try_to_vec().unwrap(),
+        data: FarmInstruction::AddReward(amount).try_to_vec().unwrap(),
     }
 }
 
@@ -276,23 +356,25 @@ pub fn pay_farm_fee(
     farm_id: &Pubkey,
     authority: &Pubkey,
     owner: &Pubkey,
-    user_crp_token_account: &Pubkey,
-    fee_owner: &Pubkey,
+    user_usdc_token_account: &Pubkey,
+    fee_usdc_ata: &Pubkey,
+    program_data_account: &Pubkey,
     token_program_id: &Pubkey,
-    farm_program_id: &Pubkey,
     amount: u64,
+    program_id: &Pubkey,
 ) -> Instruction {
     let accounts = vec![
         AccountMeta::new(*farm_id, false),
         AccountMeta::new_readonly(*authority, false),
         AccountMeta::new_readonly(*owner, true),
-        AccountMeta::new(*user_crp_token_account, false),
-        AccountMeta::new(*fee_owner, false),
+        AccountMeta::new(*user_usdc_token_account, false),
+        AccountMeta::new(*fee_usdc_ata, false),
+        AccountMeta::new(*program_data_account, false),
         AccountMeta::new(*token_program_id, false),
     ];
     Instruction {
-        program_id: *farm_program_id,
+        program_id: *program_id,
         accounts,
-        data: FarmPoolInstruction::PayFarmFee(amount).try_to_vec().unwrap(),
+        data: FarmInstruction::PayFarmFee(amount).try_to_vec().unwrap(),
     }
 }

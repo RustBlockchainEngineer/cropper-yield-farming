@@ -6,7 +6,7 @@ use thiserror::Error;
 
 /// Errors that may be returned by the FarmPool program.
 #[derive(Clone, Debug, Eq, Error, FromPrimitive, PartialEq)]
-pub enum FarmPoolError {
+pub enum FarmError {
     // 0.
     /// The account cannot be initialized because it is already being used.
     #[error("AlreadyInUse")]
@@ -90,13 +90,25 @@ pub enum FarmPoolError {
     /// invalid token account
     #[error("Invalid token account")]
     InvalidTokenAccount,
+
+    /// invalid pubkey
+    #[error("Invalid Pubkey")]
+    InvalidPubkey,
+
+    /// precise error
+    #[error("Precise Error")]
+    PreciseError,
+
+    /// Program data is not initialized yet
+    #[error("Program data is not initialized yet")]
+    NotInitializedProgramData
 }
-impl From<FarmPoolError> for ProgramError {
-    fn from(e: FarmPoolError) -> Self {
+impl From<FarmError> for ProgramError {
+    fn from(e: FarmError) -> Self {
         ProgramError::Custom(e as u32)
     }
 }
-impl<T> DecodeError<T> for FarmPoolError {
+impl<T> DecodeError<T> for FarmError {
     fn type_of() -> &'static str {
         "Farm Pool Error"
     }

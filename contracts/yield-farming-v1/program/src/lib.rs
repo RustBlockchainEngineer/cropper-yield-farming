@@ -21,6 +21,7 @@ pub mod state;
 pub mod constant;
 
 // Declare and export the program's entrypoint
+#[cfg(not(feature = "no-entrypoint"))]
 entrypoint!(process_instruction);
 
 // Program entrypoint's implementation
@@ -33,7 +34,7 @@ pub fn process_instruction(
     if let Err(error) = processor::Processor::process(program_id, accounts, _instruction_data) {
         
         // catch the error so we can print it
-        error.print::<error::FarmPoolError>();
+        error.print::<error::FarmError>();
         Err(error)
     } else {
         // processed successfully
