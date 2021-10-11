@@ -101,7 +101,26 @@ pub enum FarmError {
 
     /// Program data is not initialized yet
     #[error("Program data is not initialized yet")]
-    NotInitializedProgramData
+    NotInitializedProgramData,
+
+    /// invalid delegate
+    #[error("Token account has a delegate")]
+    InvalidDelegate,
+
+    /// invalid delegate
+    #[error("Token account has a close authority")]
+    InvalidCloseAuthority,
+
+    /// invalid delegate
+    #[error("Pool token mint has a freeze authority")]
+    InvalidFreezeAuthority,
+
+     /// Pool token mint has a non-zero supply
+     #[error("Pool token mint has a non-zero supply")]
+     InvalidSupply,
+
+    
+
 }
 impl From<FarmError> for ProgramError {
     fn from(e: FarmError) -> Self {

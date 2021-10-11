@@ -177,7 +177,7 @@ impl Processor {
         let pool_reward_token_account_info = next_account_info(account_info_iter)?;
 
         // lp token's mint account information
-        let pool_mint_info = next_account_info(account_info_iter)?;
+        let pool_lp_mint_info = next_account_info(account_info_iter)?;
 
         // reward token's mint account information
         let reward_mint_info = next_account_info(account_info_iter)?;
@@ -228,9 +228,12 @@ impl Processor {
                 return Err(FarmError::InvalidOwner.into());
         }
 
+        // borrow lp token mint account data
+        let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?; 
+        
         let pool_lp_token_data = Account::unpack_from_slice(&pool_lp_token_account_info.data.borrow())?;
         let pool_reward_token_data = Account::unpack_from_slice(&pool_reward_token_account_info.data.borrow())?;
-
+        
         // token account - check if user token's owner is depositor
         if  pool_lp_token_data.owner != *authority_info.key ||
             pool_reward_token_data.owner != *authority_info.key {
@@ -238,9 +241,25 @@ impl Processor {
         }
 
         // token account - check if token mint is correct
-        if  pool_lp_token_data.mint != *pool_mint_info.key ||
+        if  pool_lp_token_data.mint != *pool_lp_mint_info.key ||
             pool_reward_token_data.mint != *reward_mint_info.key {
             return Err(FarmError::WrongPoolMint.into());
+        }
+
+        if  pool_lp_token_data.delegate.is_some() ||
+            pool_reward_token_data.delegate.is_some() {
+            return Err(FarmError::InvalidDelegate.into());
+        }
+        if  pool_lp_token_data.close_authority.is_some() ||
+            pool_reward_token_data.close_authority.is_some() {
+            return Err(FarmError::InvalidCloseAuthority.into());
+        }
+
+        if pool_mint.supply != 0 {
+            return Err(FarmError::InvalidSupply.into());
+        }
+        if pool_mint.freeze_authority.is_some() {
+            return Err(FarmError::InvalidFreezeAuthority.into());
         }
 
         // borrow farm account data to initialize (mutable)
@@ -257,7 +276,7 @@ impl Processor {
         
         // check if lp token mint address is same with amm pool's lp token mint address
         // if not, returns WrongPoolMint error
-        if *amm_swap.pool_mint() != *pool_mint_info.key {
+        if *amm_swap.pool_mint() != *pool_lp_mint_info.key {
             return Err(FarmError::WrongPoolMint.into());
         }
 
@@ -288,7 +307,7 @@ impl Processor {
         farm_pool.nonce = nonce;
 
         // store lp token mint address
-        farm_pool.pool_mint_address = *pool_mint_info.key;
+        farm_pool.pool_mint_address = *pool_lp_mint_info.key;
 
         // store spl-token program address
         farm_pool.token_program_id = token_program_pubkey;
@@ -1248,6 +1267,12 @@ impl PrintProgramError for FarmError {
             FarmError::InvalidPubkey => msg!("Error: Invalid pubkey"),
             FarmError::PreciseError => msg!("Error: PreciseNumber error"),
             FarmError::NotInitializedProgramData => msg!("Error: Program data is not initialized yet"),
+            FarmError::InvalidDelegate => msg!("Error: Token account has a delegate"),
+            FarmError::InvalidCloseAuthority => msg!("Error: Token account has a close authority"),
+            FarmError::InvalidFreezeAuthority => {
+                msg!("Error: Pool token mint has a freeze authority")
+            },
+            FarmError::InvalidSupply => msg!("Error: Pool token mint has a non-zero supply"),
             
         }
     }
