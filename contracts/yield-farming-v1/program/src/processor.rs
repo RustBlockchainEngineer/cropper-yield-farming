@@ -27,7 +27,7 @@ use {
         sysvar::Sysvar,
         program_pack::Pack,
     },
-    spl_token::state::{Mint, Account}, 
+    spl_token::state::{Mint, Account, AccountState}, 
 };
 use std::str::FromStr;
 
@@ -243,12 +243,16 @@ impl Processor {
         // token account - check if token mint is correct
         if  pool_lp_token_data.mint != *pool_lp_mint_info.key ||
             pool_reward_token_data.mint != *reward_mint_info.key {
-            return Err(FarmError::WrongPoolMint.into());
+            return Err(FarmError::WrongPoolMint.into()); 
         }
 
         if  pool_lp_token_data.delegate.is_some() ||
             pool_reward_token_data.delegate.is_some() {
             return Err(FarmError::InvalidDelegate.into());
+        }
+        if  pool_lp_token_data.state != AccountState::Initialized ||
+            pool_reward_token_data.state != AccountState::Initialized {
+            return Err(FarmError::NotInitialized.into());
         }
         if  pool_lp_token_data.close_authority.is_some() ||
             pool_reward_token_data.close_authority.is_some() {
@@ -1273,6 +1277,7 @@ impl PrintProgramError for FarmError {
                 msg!("Error: Pool token mint has a freeze authority")
             },
             FarmError::InvalidSupply => msg!("Error: Pool token mint has a non-zero supply"),
+            FarmError::NotInitialized => msg!("Error: Not Initialized"),
             
         }
     }

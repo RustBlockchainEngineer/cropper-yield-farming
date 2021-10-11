@@ -119,7 +119,9 @@ pub enum FarmError {
      #[error("Pool token mint has a non-zero supply")]
      InvalidSupply,
 
-    
+     /// Not initialized
+     #[error("Not initialized")]
+     NotInitialized,
 
 }
 impl From<FarmError> for ProgramError {
