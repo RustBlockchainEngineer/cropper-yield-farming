@@ -518,7 +518,7 @@ impl Processor {
             &mut farm_pool,
             cur_timestamp,
             pool_mint.supply,
-        );
+        )?;
 
         // harvest user's pending rewards
         if user_info.deposit_balance > 0 {
@@ -740,7 +740,7 @@ impl Processor {
             &mut farm_pool,
             cur_timestamp,
             pool_mint.supply, 
-        );
+        )?;
 
         // harvest user's pending rewards
         if user_info.deposit_balance > 0 {
@@ -927,7 +927,7 @@ impl Processor {
                 &mut farm_pool,
                 cur_timestamp,
                 pool_mint.supply, 
-            );
+            )?;
 
             // update reward per second in the rest period from now
             let duration = farm_pool.end_timestamp - cur_timestamp;
@@ -1065,21 +1065,20 @@ impl Processor {
         farm_pool: &mut FarmPool, 
         cur_timestamp: u64, 
         lp_supply: u64, 
-    ){
+    ) -> Result<(), ProgramError>{
         // check if valid current timestamp
         if farm_pool.last_timestamp >= cur_timestamp {
-            return;
+            return Err(FarmError::AlreadyInUse.into());
         }
         if lp_supply == 0 || farm_pool.reward_per_timestamp == 0 {
             farm_pool.last_timestamp = cur_timestamp;
-            return;
+            return Err(FarmError::NotEnoughBalance.into());
         }
 
         // update reward per share net and last distributed timestamp
-        let multiplier = cur_timestamp - farm_pool.last_timestamp;
-        let reward = multiplier * farm_pool.reward_per_timestamp;
-        farm_pool.reward_per_share_net = farm_pool.reward_per_share_net + REWARD_MULTIPLER * reward / lp_supply;
+        farm_pool.update_share(cur_timestamp, lp_supply)?;
         farm_pool.last_timestamp = cur_timestamp;
+        Ok(())
     }
     pub fn harvest<'a>(
         farm_id_info: &AccountInfo<'a>,
@@ -1098,7 +1097,7 @@ impl Processor {
         // harvest
         if pending > 0 {
             // harvest fee
-            let harvest_fee = pending * program_data.harvest_fee_numerator / program_data.harvest_fee_denominator;
+            let harvest_fee = farm_pool.get_harvest_fee(pending, &program_data)?;
             
             // transfer harvest fee to fee owner wallet
             Self::token_transfer(

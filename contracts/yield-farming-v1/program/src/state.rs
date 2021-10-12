@@ -80,7 +80,7 @@ pub struct FarmPool {
     pub owner: Pubkey,
 
     /// This represents the total reward amount what a farmer can receive for unit lp
-    pub reward_per_share_net: u64,
+    pub reward_per_share_net: u128,
 
     /// latest reward time
     pub last_timestamp: u64,
@@ -120,6 +120,34 @@ impl FarmPool {
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
                     
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
+    }
+    /// get harvest fee
+    pub fn get_harvest_fee(&self, pending:u64, program_data:&FarmProgram) -> Result<u64, ProgramError>{
+        
+        let harvest_fee_numerator = PreciseNumber::new(program_data.harvest_fee_numerator as u128).ok_or(FarmError::PreciseError)?;
+        let harvest_fee_denominator = PreciseNumber::new(program_data.harvest_fee_denominator as u128).ok_or(FarmError::PreciseError)?;
+        let pending = PreciseNumber::new(pending as u128).ok_or(FarmError::PreciseError)?;
+
+        let result = pending.checked_mul(&harvest_fee_numerator).ok_or(FarmError::PreciseError)?
+                    .checked_div(&harvest_fee_denominator).ok_or(FarmError::PreciseError)?;
+                    
+        Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
+    }
+    pub fn update_share(&mut self, cur_timestamp:u64, _lp_supply:u64) -> Result<(), ProgramError>{
+        let multiplier = PreciseNumber::new((cur_timestamp - self.last_timestamp) as u128).ok_or(FarmError::PreciseError)?;
+        let reward_per_timestamp = PreciseNumber::new(self.reward_per_timestamp as u128).ok_or(FarmError::PreciseError)?;
+        let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
+        let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
+        let lp_supply = PreciseNumber::new(_lp_supply as u128).ok_or(FarmError::PreciseError)?;
+
+        let reward = multiplier.checked_mul(&reward_per_timestamp).ok_or(FarmError::PreciseError)?;
+        let updated_share = reward_multipler.checked_mul(&reward).ok_or(FarmError::PreciseError)?
+                            .checked_div(&lp_supply).ok_or(FarmError::PreciseError)?
+                            .checked_add(&reward_per_share_net).ok_or(FarmError::PreciseError)?;
+
+        self.reward_per_share_net = updated_share.to_imprecise().ok_or(FarmError::PreciseError)?;
+
+        Ok(())
     }
 }
 
