@@ -1095,11 +1095,11 @@ impl Processor {
     ) -> Result<(), ProgramError>{
         // check if valid current timestamp
         if farm_pool.last_timestamp >= cur_timestamp {
-            return Err(FarmError::AlreadyInUse.into());
+            return Ok(());
         }
         if lp_supply == 0 || farm_pool.reward_per_timestamp == 0 {
             farm_pool.last_timestamp = cur_timestamp;
-            return Err(FarmError::NotEnoughBalance.into());
+            return Ok(());
         }
 
         // update reward per share net and last distributed timestamp
