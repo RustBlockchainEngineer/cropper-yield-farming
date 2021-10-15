@@ -288,9 +288,6 @@ impl Processor {
             return Err(FarmError::InvalidCloseAuthority.into());
         }
 
-        if pool_mint.supply != 0 {
-            return Err(FarmError::InvalidSupply.into());
-        }
         if pool_mint.freeze_authority.is_some() {
             return Err(FarmError::InvalidFreezeAuthority.into());
         }
