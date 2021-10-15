@@ -7,6 +7,7 @@ use {
         instruction::{FarmInstruction},
         state::{FarmProgram,FarmPool,UserInfo},
         constant::*,
+        utils::*
     },
     borsh::{BorshDeserialize, BorshSerialize},
     num_traits::FromPrimitive,
@@ -108,15 +109,43 @@ impl Processor {
         // get all account informations from accounts array by using iterator
         let account_info_iter = &mut accounts.iter();
         let program_data_info = next_account_info(account_info_iter)?;
-        let super_owner_info = next_account_info(account_info_iter)?;
+        let owner_info = next_account_info(account_info_iter)?;
+        let rent_info = next_account_info(account_info_iter)?;
+        let system_info = next_account_info(account_info_iter)?;
 
         // check if super user is signer
-        if !super_owner_info.is_signer {
+        if !owner_info.is_signer {
             return Err(FarmError::SignatureMissing.into());
         }
 
         // check if given program data address is correct
         Self::assert_program_account(program_id, program_data_info.key)?;
+
+        let seeds = [
+            PREFIX.as_bytes(),
+            program_id.as_ref(),
+        ];
+
+        let (_pda_key, bump) = Pubkey::find_program_address(&seeds, program_id);
+        
+        let size = std::mem::size_of::<FarmProgram>();
+
+        if program_data_info.data_is_empty() {
+            // Create account with enough space
+            create_or_allocate_account_raw(
+                *program_id,
+                program_data_info,
+                rent_info,
+                system_info,
+                owner_info,
+                size,
+                &[
+                    PREFIX.as_bytes(),
+                    program_id.as_ref(),
+                    &[bump],
+                ],
+            )?;
+        }
 
         let mut program_data = try_from_slice_unchecked::<FarmProgram>(&program_data_info.data.borrow())?;
 
@@ -128,7 +157,7 @@ impl Processor {
         }
 
         // check if given super user is saved super user
-        if *super_owner_info.key != program_data.super_owner {
+        if *owner_info.key != program_data.super_owner {
             return Err(FarmError::InvalidOwner.into());
         }
 

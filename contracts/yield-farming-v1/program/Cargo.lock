@@ -483,6 +483,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cropper_farm_v1_test1"
+version = "1.0.0"
+dependencies = [
+ "borsh 0.9.1",
+ "borsh-derive 0.9.1",
+ "cropper-liquidity-pool",
+ "num-derive",
+ "num-traits",
+ "solana-program",
+ "solana-program-test",
+ "solana-sdk",
+ "spl-math 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "spl-token 3.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror",
+]
+
+[[package]]
 name = "crossbeam-channel"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -847,23 +864,6 @@ dependencies = [
  "quote 1.0.9",
  "syn 1.0.74",
  "synstructure",
-]
-
-[[package]]
-name = "farm-pool"
-version = "1.0.0"
-dependencies = [
- "borsh 0.9.1",
- "borsh-derive 0.9.1",
- "cropper-liquidity-pool",
- "num-derive",
- "num-traits",
- "solana-program",
- "solana-program-test",
- "solana-sdk",
- "spl-math 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "spl-token 3.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "thiserror",
 ]
 
 [[package]]
