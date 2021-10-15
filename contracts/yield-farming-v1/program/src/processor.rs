@@ -58,10 +58,10 @@ impl Processor {
                 Self::process_initialize_or_set_program(
                     program_id, 
                     accounts, 
-                    super_owner,
-                    fee_owner,
-                    allowed_creator,
-                    amm_program_id,
+                    &super_owner,
+                    &fee_owner,
+                    &allowed_creator,
+                    &amm_program_id,
                     farm_fee,
                     harvest_fee_numerator,
                     harvest_fee_denominator)
@@ -96,10 +96,10 @@ impl Processor {
     pub fn process_initialize_or_set_program(
         program_id: &Pubkey,        // this program id
         accounts: &[AccountInfo],   // all account informations
-        super_owner: Pubkey,
-        fee_owner: Pubkey,
-        allowed_creator: Pubkey,
-        amm_program_id: Pubkey,
+        super_owner: &Pubkey,
+        fee_owner: &Pubkey,
+        allowed_creator: &Pubkey,
+        amm_program_id: &Pubkey,
         farm_fee: u64,
         harvest_fee_numerator: u64,
         harvest_fee_denominator: u64,
@@ -162,10 +162,10 @@ impl Processor {
         }
 
         // save given parameters
-        program_data.super_owner = super_owner;
-        program_data.fee_owner = fee_owner;
-        program_data.allowed_creator = allowed_creator;
-        program_data.amm_program_id = amm_program_id;
+        program_data.super_owner = *super_owner;
+        program_data.fee_owner = *fee_owner;
+        program_data.allowed_creator = *allowed_creator;
+        program_data.amm_program_id = *amm_program_id;
         program_data.farm_fee = farm_fee;
         program_data.harvest_fee_numerator = harvest_fee_numerator;
         program_data.harvest_fee_denominator = harvest_fee_denominator;
