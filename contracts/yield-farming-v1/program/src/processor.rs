@@ -523,6 +523,7 @@ impl Processor {
 
         // token account - check if user has enough token amount
         if user_lp_token_data.amount < amount {
+            msg!("user amount: {}, given amount:{}",user_lp_token_data.amount , amount);
             return Err(FarmError::NotEnoughBalance.into());
         }
 
