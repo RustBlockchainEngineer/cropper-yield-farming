@@ -17,7 +17,7 @@ pub const PREFIX:&str = "cropperfarm";
 // pub const FARM_FEE:u64 = 5000;
 
 /// initial super owner of this program. this owner can change program state
-pub const INITIAL_SUPER_OWNER:&str = if DEVNET_MODE {"4GJ3z4skEHJADz3MVeNYBg4YV8H27rBQey2YYdiPC8PA"} else {"4GJ3z4skEHJADz3MVeNYBg4YV8H27rBQey2YYdiPC8PA"};
+pub const INITIAL_SUPER_OWNER:&str = if DEVNET_MODE {"4GJ3z4skEHJADz3MVeNYBg4YV8H27rBQey2YYdiPC8PA"} else {"DyDdJM9KVsvosfXbcHDp4pRpmbMHkRq3pcarBykPy4ir"};
 
 /// Fee owner wallet address
 /// This includes harvest fee
