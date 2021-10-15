@@ -130,8 +130,7 @@ impl Processor {
         
         let size = std::mem::size_of::<FarmProgram>();
 
-        if program_data_info.data_len() == 0 {
-            msg!("allocating program account");
+        if program_data_info.data_is_empty() {
             // Create account with enough space
             create_or_allocate_account_raw(
                 *program_id,
