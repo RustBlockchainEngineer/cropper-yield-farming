@@ -1,8 +1,8 @@
 
 [package]
-name = "farm-pool"
+name = "cropper_farm_v1_test1"
 version = "1.0.0"
-description = "stake pool program"
+description = "cropper yield farming program"
 authors = ["Hongbo Li"]
 repository = "https://github.com/solana-labs/solana"
 license = "Apache-2.0"
@@ -28,5 +28,4 @@ solana-program-test = "1.7.8"
 solana-sdk = "1.7.8"
 
 [lib]
-name = "farmprogram_test"
 crate-type = ["cdylib", "lib"]

@@ -54,7 +54,7 @@ impl Processor {
                 harvest_fee_denominator,
             } => {
                 // Instruction: Initialize
-                Self::process_initialize_program(
+                Self::process_initialize_or_set_program(
                     program_id, 
                     accounts, 
                     super_owner,
@@ -92,7 +92,7 @@ impl Processor {
         }
     }
 
-    pub fn process_initialize_program(
+    pub fn process_initialize_or_set_program(
         program_id: &Pubkey,        // this program id
         accounts: &[AccountInfo],   // all account informations
         super_owner: Pubkey,
