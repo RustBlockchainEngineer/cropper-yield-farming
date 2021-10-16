@@ -17,7 +17,7 @@ pub struct Fees {
     /// fee numerator to reinjected to the pool
     pub return_fee_numerator: u64,
     
-    /// fee numerator to reinjected to the fixed account
+    /// fee numerator to reinjected to the owner account
     pub fixed_fee_numerator: u64,
 
     /// fee dominator 
@@ -72,13 +72,16 @@ impl Fees {
             u128::try_from(self.fee_denominator).ok()?,
         )
     }
-
+    
     /// Validate that the fees are reasonable
     pub fn validate(&self) -> Result<(), AmmError> {
 
         if self.fee_denominator == 0 && self.fixed_fee_numerator == 0  && self.return_fee_numerator == 0{
             Ok(())
-        } else if self.fixed_fee_numerator +  self.return_fee_numerator >= self.fee_denominator {
+        } else if   self.fixed_fee_numerator >= self.fee_denominator ||  
+                    self.return_fee_numerator >= self.fee_denominator || 
+                    self.fixed_fee_numerator >= self.fee_denominator - self.return_fee_numerator
+        {
             Err(AmmError::InvalidFee)
         } else {
             Ok(())
@@ -109,6 +112,9 @@ impl Pack for Fees {
     }
 
     fn unpack_from_slice(input: &[u8]) -> Result<Fees, ProgramError> {
+        if input.len() < Self::LEN{
+            return Err(AmmError::InvalidInstruction.into());    
+        }
         let input = array_ref![input, 0, 24];
         #[allow(clippy::ptr_offset_with_cast)]
         let (
@@ -121,34 +127,5 @@ impl Pack for Fees {
             fixed_fee_numerator: u64::from_le_bytes(*fixed_fee_numerator),
             fee_denominator: u64::from_le_bytes(*fee_denominator),
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn pack_fees() {
-        let return_fee_numerator = 2;
-        let fixed_fee_numerator = 1;
-        let fee_denominator = 100;
-        let fees = Fees {
-            return_fee_numerator,
-            fixed_fee_numerator,
-            fee_denominator
-        };
-
-        let mut packed = [0u8; Fees::LEN];
-        Pack::pack_into_slice(&fees, &mut packed[..]);
-        let unpacked = Fees::unpack_from_slice(&packed).unwrap();
-        assert_eq!(fees, unpacked);
-
-        let mut packed = vec![];
-        packed.extend_from_slice(&return_fee_numerator.to_le_bytes());
-        packed.extend_from_slice(&fixed_fee_numerator.to_le_bytes());
-        packed.extend_from_slice(&fee_denominator.to_le_bytes());
-        let unpacked = Fees::unpack_from_slice(&packed).unwrap();
-        assert_eq!(fees, unpacked);
     }
 }

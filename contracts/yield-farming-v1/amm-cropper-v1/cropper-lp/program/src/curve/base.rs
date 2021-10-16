@@ -13,6 +13,7 @@ use crate::curve::{
     offset::OffsetCurve,
     stable::StableCurve,
 };
+use crate::error::AmmError;
 use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
 use std::convert::{TryFrom, TryInto};
 use std::fmt::Debug;
@@ -208,6 +209,9 @@ impl Pack for SwapCurve {
 
     /// Unpacks a byte buffer into a SwapCurve
     fn unpack_from_slice(input: &[u8]) -> Result<Self, ProgramError> {
+        if input.len() < Self::LEN{
+            return Err(AmmError::InvalidInstruction.into());    
+        }
         let input = array_ref![input, 0, 33];
         #[allow(clippy::ptr_offset_with_cast)]
         let (curve_type, calculator) = array_refs![input, 1, 32];
@@ -255,136 +259,5 @@ impl TryFrom<u8> for CurveType {
             3 => Ok(CurveType::Offset),
             _ => Err(ProgramError::InvalidAccountData),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn pack_swap_curve() {
-        let curve = ConstantProductCurve {};
-        let curve_type = CurveType::ConstantProduct;
-        let swap_curve = SwapCurve {
-            curve_type,
-            calculator: Box::new(curve),
-        };
-
-        let mut packed = [0u8; SwapCurve::LEN];
-        Pack::pack_into_slice(&swap_curve, &mut packed[..]);
-        let unpacked = SwapCurve::unpack_from_slice(&packed).unwrap();
-        assert_eq!(swap_curve, unpacked);
-
-        let mut packed = vec![curve_type as u8];
-        packed.extend_from_slice(&[0u8; 32]); // 32 bytes reserved for curve
-        let unpacked = SwapCurve::unpack_from_slice(&packed).unwrap();
-        assert_eq!(swap_curve, unpacked);
-    }
-
-    #[test]
-    fn constant_product_trade_fee() {
-        // calculation on https://github.com/solana-labs/solana-program-library/issues/341
-        let swap_source_amount = 1000;
-        let swap_destination_amount = 50000;
-        let return_fee_numerator = 2;
-        let fixed_fee_numerator = 1;
-        let fee_denominator = 100;
-
-        let fees = Fees {
-            return_fee_numerator,
-            fixed_fee_numerator,
-            fee_denominator
-        };
-        let source_amount = 100;
-        let curve = ConstantProductCurve {};
-        let swap_curve = SwapCurve {
-            curve_type: CurveType::ConstantProduct,
-            calculator: Box::new(curve),
-        };
-        let result = swap_curve
-            .swap(
-                source_amount,
-                swap_source_amount,
-                swap_destination_amount,
-                TradeDirection::AtoB,
-                &fees,
-            )
-            .unwrap();
-        assert_eq!(result.new_swap_source_amount, 1100);
-        assert_eq!(result.destination_amount_swapped, 4504);
-        assert_eq!(result.new_swap_destination_amount, 45496);
-        assert_eq!(result.trade_fee, 1);
-        assert_eq!(result.owner_fee, 0);
-    }
-
-    #[test]
-    fn constant_product_owner_fee() {
-        // calculation on https://github.com/solana-labs/solana-program-library/issues/341
-        let swap_source_amount = 1000;
-        let swap_destination_amount = 50000;
-        let trade_fee_numerator = 0;
-        let trade_fee_denominator = 0;
-        let owner_trade_fee_numerator = 1;
-        let owner_trade_fee_denominator = 100;
-        let owner_withdraw_fee_numerator = 0;
-        let owner_withdraw_fee_denominator = 0;
-        let host_fee_numerator = 0;
-        let host_fee_denominator = 0;
-        let fees = Fees {
-            trade_fee_numerator,
-            trade_fee_denominator,
-            owner_trade_fee_numerator,
-            owner_trade_fee_denominator,
-            owner_withdraw_fee_numerator,
-            owner_withdraw_fee_denominator,
-            host_fee_numerator,
-            host_fee_denominator,
-        };
-        let source_amount: u128 = 100;
-        let curve = ConstantProductCurve {};
-        let swap_curve = SwapCurve {
-            curve_type: CurveType::ConstantProduct,
-            calculator: Box::new(curve),
-        };
-        let result = swap_curve
-            .swap(
-                source_amount,
-                swap_source_amount,
-                swap_destination_amount,
-                TradeDirection::AtoB,
-                &fees,
-            )
-            .unwrap();
-        assert_eq!(result.new_swap_source_amount, 1100);
-        assert_eq!(result.destination_amount_swapped, 4504);
-        assert_eq!(result.new_swap_destination_amount, 45496);
-        assert_eq!(result.trade_fee, 0);
-        assert_eq!(result.owner_fee, 1);
-    }
-
-    #[test]
-    fn constant_product_no_fee() {
-        let swap_source_amount: u128 = 1_000;
-        let swap_destination_amount: u128 = 50_000;
-        let source_amount: u128 = 100;
-        let curve = ConstantProductCurve::default();
-        let fees = Fees::default();
-        let swap_curve = SwapCurve {
-            curve_type: CurveType::ConstantProduct,
-            calculator: Box::new(curve),
-        };
-        let result = swap_curve
-            .swap(
-                source_amount,
-                swap_source_amount,
-                swap_destination_amount,
-                TradeDirection::AtoB,
-                &fees,
-            )
-            .unwrap();
-        assert_eq!(result.new_swap_source_amount, 1100);
-        assert_eq!(result.destination_amount_swapped, 4545);
-        assert_eq!(result.new_swap_destination_amount, 45455);
     }
 }
