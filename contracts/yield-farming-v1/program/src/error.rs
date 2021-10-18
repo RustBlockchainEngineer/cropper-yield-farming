@@ -123,6 +123,18 @@ pub enum FarmError {
      #[error("Not initialized")]
      NotInitialized,
 
+     /// Invalid SystemProgram Id
+     #[error("Invalid SystemProgram Id")]
+     InvalidSystemProgramId,
+
+     /// Invalid Rent Sysvar Id
+     #[error("Invalid Rent Sysvar Id")]
+     InvalidRentSysvarId,
+
+     /// Invalid Clock Sysvar Id
+     #[error("Invalid Clock Sysvar Id")]
+     InvalidClockSysvarId,
+
 }
 impl From<FarmError> for ProgramError {
     fn from(e: FarmError) -> Self {

@@ -113,6 +113,16 @@ impl Processor {
         let rent_info = next_account_info(account_info_iter)?;
         let system_info = next_account_info(account_info_iter)?;
 
+        // check if rent sysvar program id is correct
+        if *rent_info.key != Pubkey::from_str(RENT_SYSVAR_ID).map_err(|_| FarmError::InvalidPubkey)? {
+            return Err(FarmError::InvalidRentSysvarId.into());
+        }
+
+        // check if system program id is correct
+        if *rent_info.key != Pubkey::from_str(SYSTEM_PROGRAM_ID).map_err(|_| FarmError::InvalidPubkey)? {
+            return Err(FarmError::InvalidSystemProgramId.into());
+        }
+
         // check if super user is signer
         if !owner_info.is_signer {
             return Err(FarmError::SignatureMissing.into());
@@ -416,6 +426,11 @@ impl Processor {
         // clock account information to use timestamp
         let clock_sysvar_info = next_account_info(account_info_iter)?;
 
+        // check if clock sysvar program id is correct
+        if *clock_sysvar_info.key != Pubkey::from_str(CLOCK_SYSVAR_ID).map_err(|_| FarmError::InvalidPubkey)? {
+            return Err(FarmError::InvalidClockSysvarId.into());
+        }
+
         // check if given program account is correct
         Self::assert_program_account(program_id, farm_program_info.key)?;
 
@@ -641,6 +656,11 @@ impl Processor {
         // clock account information to use timestamp
         let clock_sysvar_info = next_account_info(account_info_iter)?;
 
+        // check if clock sysvar program id is correct
+        if *clock_sysvar_info.key != Pubkey::from_str(CLOCK_SYSVAR_ID).map_err(|_| FarmError::InvalidPubkey)? {
+            return Err(FarmError::InvalidClockSysvarId.into());
+        }
+
         // check if given program account is correct
         Self::assert_program_account(program_id, farm_program_info.key)?;
 
@@ -856,6 +876,11 @@ impl Processor {
 
         // clock account information to use timestamp
         let clock_sysvar_info = next_account_info(account_info_iter)?;
+
+        // check if clock sysvar program id is correct
+        if *clock_sysvar_info.key != Pubkey::from_str(CLOCK_SYSVAR_ID).map_err(|_| FarmError::InvalidPubkey)? {
+            return Err(FarmError::InvalidClockSysvarId.into());
+        }
 
         // check if given program account is correct
         Self::assert_program_account(program_id, farm_program_info.key)?;
@@ -1303,6 +1328,9 @@ impl PrintProgramError for FarmError {
             },
             FarmError::InvalidSupply => msg!("Error: Pool token mint has a non-zero supply"),
             FarmError::NotInitialized => msg!("Error: Not Initialized"),
+            FarmError::InvalidSystemProgramId => msg!("Error: Invalid System Program Id"),
+            FarmError::InvalidRentSysvarId => msg!("Error: Invalid Rent Sysvar Program Id"),
+            FarmError::InvalidClockSysvarId => msg!("Error: Invalid Clock Sysvar Program Id"),
             
         }
     }
