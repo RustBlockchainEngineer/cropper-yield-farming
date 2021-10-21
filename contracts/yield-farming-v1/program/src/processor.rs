@@ -119,7 +119,7 @@ impl Processor {
         }
 
         // check if system program id is correct
-        if *rent_info.key != Pubkey::from_str(SYSTEM_PROGRAM_ID).map_err(|_| FarmError::InvalidPubkey)? {
+        if *system_info.key != Pubkey::from_str(SYSTEM_PROGRAM_ID).map_err(|_| FarmError::InvalidPubkey)? {
             return Err(FarmError::InvalidSystemProgramId.into());
         }
 
