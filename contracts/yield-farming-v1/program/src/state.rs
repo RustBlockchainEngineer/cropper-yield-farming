@@ -95,7 +95,7 @@ pub struct FarmPool {
     pub end_timestamp: u64,
 
 }
-impl FarmPool {
+impl FarmPool { 
     /// get current pending reward amount for a user
     pub fn pending_rewards(&self, user_info:&mut UserInfo) -> Result<u64, ProgramError> {
         let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).ok_or(FarmError::PreciseError)?;
@@ -134,13 +134,17 @@ impl FarmPool {
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
     pub fn update_share(&mut self, cur_timestamp:u64, _lp_supply:u64) -> Result<(), ProgramError>{
-        let multiplier = PreciseNumber::new((cur_timestamp - self.last_timestamp) as u128).ok_or(FarmError::PreciseError)?;
+        let mut _calc_timestamp = cur_timestamp;
+        if cur_timestamp > self.end_timestamp {
+            _calc_timestamp = self.end_timestamp;
+        }
+        let duration = PreciseNumber::new((_calc_timestamp - self.last_timestamp) as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_timestamp = PreciseNumber::new(self.reward_per_timestamp as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let lp_supply = PreciseNumber::new(_lp_supply as u128).ok_or(FarmError::PreciseError)?;
 
-        let reward = multiplier.checked_mul(&reward_per_timestamp).ok_or(FarmError::PreciseError)?;
+        let reward = duration.checked_mul(&reward_per_timestamp).ok_or(FarmError::PreciseError)?;
         let updated_share = reward_multipler.checked_mul(&reward).ok_or(FarmError::PreciseError)?
                             .checked_div(&lp_supply).ok_or(FarmError::PreciseError)?
                             .checked_add(&reward_per_share_net).ok_or(FarmError::PreciseError)?;
