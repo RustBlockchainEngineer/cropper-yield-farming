@@ -12,7 +12,7 @@ pub const VERSION:u8 = 1;
 pub const PREFIX:&str = "cropperfarm";
 
 /// initial super owner of this program. this owner can change program state
-pub const INITIAL_SUPER_OWNER:&str = if DEVNET_MODE {"4GJ3z4skEHJADz3MVeNYBg4YV8H27rBQey2YYdiPC8PA"} else {"DyDdJM9KVsvosfXbcHDp4pRpmbMHkRq3pcarBykPy4ir"};
+pub const INITIAL_SUPER_OWNER:&str = if DEVNET_MODE {"4GJ3z4skEHJADz3MVeNYBg4YV8H27rBQey2YYdiPC8PA"} else {"AwtDEd9GThBNWNahvLZUok1BiRULNQ86VruXkYAckCtV"};
 
 pub const TOKEN_PROGRAM_ID:&str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 pub const RENT_SYSVAR_ID:&str = "SysvarRent111111111111111111111111111111111";
