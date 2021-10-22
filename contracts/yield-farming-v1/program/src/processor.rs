@@ -1122,19 +1122,19 @@ impl Processor {
     pub fn update_pool<'a>(
         farm_pool: &mut FarmPool, 
         cur_timestamp: u64, 
-        lp_supply: u64, 
+        lp_balance: u64, 
     ) -> Result<(), ProgramError>{
         // check if valid current timestamp
         if farm_pool.last_timestamp >= cur_timestamp {
             return Ok(());
         }
-        if lp_supply == 0 || farm_pool.reward_per_timestamp == 0 {
+        if lp_balance == 0 || farm_pool.reward_per_timestamp == 0 {
             farm_pool.last_timestamp = cur_timestamp;
             return Ok(());
         }
 
         // update reward per share net and last distributed timestamp
-        farm_pool.update_share(cur_timestamp, lp_supply)?;
+        farm_pool.update_share(cur_timestamp, lp_balance)?;
         farm_pool.last_timestamp = cur_timestamp;
         Ok(())
     }
@@ -1149,15 +1149,19 @@ impl Processor {
         farm_pool:&FarmPool,
         user_info:&mut UserInfo
     )->Result<(), ProgramError>{
+        msg!("harvesting ...");
         // get pending amount
         let pending: u64 = farm_pool.pending_rewards(user_info)?;
+        msg!("pending amount is {}", pending);
 
         // harvest
         if pending > 0 {
+
             // harvest fee
             let harvest_fee = farm_pool.get_harvest_fee(pending, &program_data)?;
             
             // transfer harvest fee to fee owner wallet
+            msg!("harvest fee amount is {}", harvest_fee);
             Self::token_transfer(
                 farm_id_info.key,
                 token_program_info.clone(), 
@@ -1172,6 +1176,7 @@ impl Processor {
             let _pending = pending - harvest_fee;
 
             // transfer real pending amount from reward pool to user reward token account
+            msg!("real harvest amount is {}", _pending);
             Self::token_transfer(
                 farm_id_info.key,
                 token_program_info.clone(), 
