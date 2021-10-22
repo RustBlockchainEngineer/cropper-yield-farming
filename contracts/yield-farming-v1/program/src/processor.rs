@@ -552,13 +552,13 @@ impl Processor {
         }
 
         // borrow lp token mint account data
-        let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?; 
+        //let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?; 
 
         //update this pool with up-to-date, distribute reward token 
         Self::update_pool(
             &mut farm_pool,
             cur_timestamp,
-            pool_mint.supply,
+            pool_lp_token_data.amount,
         )?;
 
         // harvest user's pending rewards
@@ -779,13 +779,13 @@ impl Processor {
         }
 
         //borrow pool lp token mint account data
-        let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
+        //let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
 
         //update this pool with up-to-date , distribute reward
         Self::update_pool(
             &mut farm_pool,
             cur_timestamp,
-            pool_mint.supply, 
+            pool_lp_token_data.amount, 
         )?;
 
         // harvest user's pending rewards
@@ -866,6 +866,9 @@ impl Processor {
         let pool_reward_token_account_info = next_account_info(account_info_iter)?;
 
         // lp token account information in the farm pool
+        let pool_lp_token_account_info = next_account_info(account_info_iter)?;
+
+        // lp token account information in the farm pool
         let pool_lp_mint_info = next_account_info(account_info_iter)?;
 
         // farm program data account info
@@ -923,21 +926,25 @@ impl Processor {
 
         // token account - check if owner is saved token program
         if  *user_reward_token_account_info.owner != farm_pool.token_program_id ||
-            *pool_reward_token_account_info.owner != farm_pool.token_program_id {
+            *pool_reward_token_account_info.owner != farm_pool.token_program_id ||
+            *pool_lp_token_account_info.owner != farm_pool.token_program_id {
                 return Err(FarmError::InvalidOwner.into());
         }
 
         // token account - check if pool lp token account & pool reward token account is for given farm account
-        if  farm_pool.pool_reward_token_account != *pool_reward_token_account_info.key{
+        if  farm_pool.pool_reward_token_account != *pool_reward_token_account_info.key ||
+            farm_pool.pool_lp_token_account != *pool_lp_token_account_info.key {
                 return Err(FarmError::InvalidOwner.into());
         }
 
         let user_reward_token_data = Account::unpack_from_slice(&user_reward_token_account_info.data.borrow())?;
         let pool_reward_token_data = Account::unpack_from_slice(&pool_reward_token_account_info.data.borrow())?;
+        let pool_lp_token_data = Account::unpack_from_slice(&pool_lp_token_account_info.data.borrow())?;
 
         // token account - check if user token's owner is depositor
         if  user_reward_token_data.owner != *creator_info.key ||
-            pool_reward_token_data.owner != *authority_info.key {
+            pool_reward_token_data.owner != *authority_info.key || 
+            pool_lp_token_data.owner != *authority_info.key {
             return Err(FarmError::InvalidOwner.into());
         }
 
@@ -971,13 +978,13 @@ impl Processor {
             )?;
 
             // borrow pool lp token mint account data
-            let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
+            //let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
 
             //update this pool with up-to-date
             Self::update_pool(
                 &mut farm_pool,
                 cur_timestamp,
-                pool_mint.supply, 
+                pool_lp_token_data.amount, 
             )?;
 
             // update reward per second in the rest period from now
