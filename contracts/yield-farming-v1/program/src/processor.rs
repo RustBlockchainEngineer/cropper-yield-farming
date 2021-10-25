@@ -484,8 +484,9 @@ impl Processor {
             return Err(FarmError::InvalidOwner.into());
         }
 
+        let is_user_info_zero_account = Self::is_zero_account(user_info_account_info);
         // user info account - check if this depositor is new user
-        if Self::is_zero_account(user_info_account_info) {
+        if is_user_info_zero_account {
             // save user's wallet address
             user_info.wallet = *depositor_info.key;
 
@@ -552,13 +553,13 @@ impl Processor {
         }
 
         // borrow lp token mint account data
-        //let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?; 
+        let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?; 
 
         //update this pool with up-to-date, distribute reward token 
         Self::update_pool(
             &mut farm_pool,
             cur_timestamp,
-            pool_lp_token_data.amount,
+            pool_mint.supply,
         )?;
 
         // harvest user's pending rewards
@@ -593,8 +594,10 @@ impl Processor {
             user_info.deposit_balance += amount;
         }
         
-        // update user's reward debt
-        user_info.reward_debt = farm_pool.get_new_reward_debt(&user_info)?;
+        if is_user_info_zero_account {
+            // update user's reward debt
+            user_info.reward_debt = farm_pool.get_new_reward_debt(&user_info)?;
+        }
 
         // save user's new info to network
         user_info
@@ -779,13 +782,13 @@ impl Processor {
         }
 
         //borrow pool lp token mint account data
-        //let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
+        let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
 
         //update this pool with up-to-date , distribute reward
         Self::update_pool(
             &mut farm_pool,
             cur_timestamp,
-            pool_lp_token_data.amount, 
+            pool_mint.supply, 
         )?;
 
         // harvest user's pending rewards
@@ -866,9 +869,6 @@ impl Processor {
         let pool_reward_token_account_info = next_account_info(account_info_iter)?;
 
         // lp token account information in the farm pool
-        let pool_lp_token_account_info = next_account_info(account_info_iter)?;
-
-        // lp token account information in the farm pool
         let pool_lp_mint_info = next_account_info(account_info_iter)?;
 
         // farm program data account info
@@ -926,25 +926,21 @@ impl Processor {
 
         // token account - check if owner is saved token program
         if  *user_reward_token_account_info.owner != farm_pool.token_program_id ||
-            *pool_reward_token_account_info.owner != farm_pool.token_program_id ||
-            *pool_lp_token_account_info.owner != farm_pool.token_program_id {
+            *pool_reward_token_account_info.owner != farm_pool.token_program_id {
                 return Err(FarmError::InvalidOwner.into());
         }
 
         // token account - check if pool lp token account & pool reward token account is for given farm account
-        if  farm_pool.pool_reward_token_account != *pool_reward_token_account_info.key ||
-            farm_pool.pool_lp_token_account != *pool_lp_token_account_info.key {
+        if  farm_pool.pool_reward_token_account != *pool_reward_token_account_info.key{
                 return Err(FarmError::InvalidOwner.into());
         }
 
         let user_reward_token_data = Account::unpack_from_slice(&user_reward_token_account_info.data.borrow())?;
         let pool_reward_token_data = Account::unpack_from_slice(&pool_reward_token_account_info.data.borrow())?;
-        let pool_lp_token_data = Account::unpack_from_slice(&pool_lp_token_account_info.data.borrow())?;
 
         // token account - check if user token's owner is depositor
         if  user_reward_token_data.owner != *creator_info.key ||
-            pool_reward_token_data.owner != *authority_info.key || 
-            pool_lp_token_data.owner != *authority_info.key {
+            pool_reward_token_data.owner != *authority_info.key {
             return Err(FarmError::InvalidOwner.into());
         }
 
@@ -978,13 +974,13 @@ impl Processor {
             )?;
 
             // borrow pool lp token mint account data
-            //let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
+            let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
 
             //update this pool with up-to-date
             Self::update_pool(
                 &mut farm_pool,
                 cur_timestamp,
-                pool_lp_token_data.amount, 
+                pool_mint.supply, 
             )?;
 
             // update reward per second in the rest period from now
@@ -1122,19 +1118,19 @@ impl Processor {
     pub fn update_pool<'a>(
         farm_pool: &mut FarmPool, 
         cur_timestamp: u64, 
-        lp_balance: u64, 
+        lp_supply: u64, 
     ) -> Result<(), ProgramError>{
         // check if valid current timestamp
         if farm_pool.last_timestamp >= cur_timestamp {
             return Ok(());
         }
-        if lp_balance == 0 || farm_pool.reward_per_timestamp == 0 {
+        if lp_supply == 0 || farm_pool.reward_per_timestamp == 0 {
             farm_pool.last_timestamp = cur_timestamp;
             return Ok(());
         }
 
         // update reward per share net and last distributed timestamp
-        farm_pool.update_share(cur_timestamp, lp_balance)?;
+        farm_pool.update_share(cur_timestamp, lp_supply)?;
         farm_pool.last_timestamp = cur_timestamp;
         Ok(())
     }
@@ -1149,19 +1145,15 @@ impl Processor {
         farm_pool:&FarmPool,
         user_info:&mut UserInfo
     )->Result<(), ProgramError>{
-        msg!("harvesting ...");
         // get pending amount
         let pending: u64 = farm_pool.pending_rewards(user_info)?;
-        msg!("pending amount is {}", pending);
 
         // harvest
         if pending > 0 {
-
             // harvest fee
             let harvest_fee = farm_pool.get_harvest_fee(pending, &program_data)?;
             
             // transfer harvest fee to fee owner wallet
-            msg!("harvest fee amount is {}", harvest_fee);
             Self::token_transfer(
                 farm_id_info.key,
                 token_program_info.clone(), 
@@ -1176,7 +1168,6 @@ impl Processor {
             let _pending = pending - harvest_fee;
 
             // transfer real pending amount from reward pool to user reward token account
-            msg!("real harvest amount is {}", _pending);
             Self::token_transfer(
                 farm_id_info.key,
                 token_program_info.clone(), 
@@ -1186,6 +1177,8 @@ impl Processor {
                 farm_pool.nonce, 
                 _pending
             )?;
+
+            user_info.reward_debt += pending;
         }
 
         Ok(())
