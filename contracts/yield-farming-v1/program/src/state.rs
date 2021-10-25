@@ -133,14 +133,18 @@ impl FarmPool {
                     
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
-    pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64) -> Result<(), ProgramError>{
+    pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64, _reward_balance:u64) -> Result<(), ProgramError>{
         let mut _calc_timestamp = cur_timestamp;
         if cur_timestamp > self.end_timestamp {
             _calc_timestamp = self.end_timestamp;
         }
 
+        let remained_farm_duration = PreciseNumber::new((self.end_timestamp - self.last_timestamp) as u128).ok_or(FarmError::PreciseError)?;
+        let reward_balance = PreciseNumber::new(_reward_balance as u128).ok_or(FarmError::PreciseError)?;
+        let reward_per_timestamp = reward_balance
+                                    .checked_div(&remained_farm_duration).ok_or(FarmError::PreciseError)?;
+
         let duration = PreciseNumber::new((_calc_timestamp - self.last_timestamp) as u128).ok_or(FarmError::PreciseError)?;
-        let reward_per_timestamp = PreciseNumber::new(self.reward_per_timestamp as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let lp_balance = PreciseNumber::new(_lp_balance as u128).ok_or(FarmError::PreciseError)?;
