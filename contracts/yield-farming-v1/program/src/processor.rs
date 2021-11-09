@@ -138,16 +138,18 @@ impl Processor {
 
         let (_pda_key, bump) = Pubkey::find_program_address(&seeds, program_id);
         
-        let size = std::mem::size_of::<FarmProgram>();
+        
 
         if program_data_info.data_is_empty() {
+            let size = std::mem::size_of::<FarmProgram>();
+
             // Create account with enough space
             create_or_allocate_account_raw(
                 *program_id,
-                program_data_info,
-                rent_info,
-                system_info,
-                owner_info,
+                &program_data_info.clone(),
+                &rent_info.clone(),
+                &system_info.clone(),
+                &owner_info.clone(),
                 size,
                 &[
                     PREFIX.as_bytes(),
@@ -426,6 +428,19 @@ impl Processor {
         // clock account information to use timestamp
         let clock_sysvar_info = next_account_info(account_info_iter)?;
 
+        let rent_info = next_account_info(account_info_iter)?;
+        let system_info = next_account_info(account_info_iter)?;
+
+        // check if rent sysvar program id is correct
+        if *rent_info.key != Pubkey::from_str(RENT_SYSVAR_ID).map_err(|_| FarmError::InvalidPubkey)? {
+            return Err(FarmError::InvalidRentSysvarId.into());
+        }
+
+        // check if system program id is correct
+        if *system_info.key != Pubkey::from_str(SYSTEM_PROGRAM_ID).map_err(|_| FarmError::InvalidPubkey)? {
+            return Err(FarmError::InvalidSystemProgramId.into());
+        }
+
         // check if clock sysvar program id is correct
         if *clock_sysvar_info.key != Pubkey::from_str(CLOCK_SYSVAR_ID).map_err(|_| FarmError::InvalidPubkey)? {
             return Err(FarmError::InvalidClockSysvarId.into());
@@ -449,6 +464,37 @@ impl Processor {
 
         // borrow farm pool account data
         let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
+
+        if user_info_account_info.data_is_empty() {
+            let seeds = [
+                PREFIX.as_bytes(),
+                farm_id_info.key.as_ref(),
+                depositor_info.key.as_ref(),
+            ];
+
+            let (found_user_info_key, bump) = Pubkey::find_program_address(&seeds, program_id);
+
+            if found_user_info_key != *user_info_account_info.key {
+                return Err(FarmError::InvalidProgramAddress.into());
+            }
+
+            let size = std::mem::size_of::<UserInfo>();
+            // Create account with enough space
+            create_or_allocate_account_raw(
+                *program_id,
+                &user_info_account_info.clone(),
+                &rent_info.clone(),
+                &system_info.clone(),
+                &depositor_info.clone(),
+                size,
+                &[
+                    PREFIX.as_bytes(),
+                    farm_id_info.key.as_ref(),
+                    depositor_info.key.as_ref(),
+                    &[bump],
+                ],
+            )?;
+        }
         
         // borrow user info for this pool
         let mut user_info = try_from_slice_unchecked::<UserInfo>(&user_info_account_info.data.borrow())?;
@@ -551,9 +597,6 @@ impl Processor {
         if *token_program_info.key != farm_pool.token_program_id {
             return Err(FarmError::InvalidProgramAddress.into());
         }
-
-        // borrow lp token mint account data
-        //let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
 
         //update this pool with up-to-date, distribute reward token 
         Self::update_pool(
@@ -683,6 +726,9 @@ impl Processor {
         // borrow farm pool account data
         let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
 
+        if user_info_account_info.data_is_empty() {
+            return Err(FarmError::InvalidProgramAddress.into());
+        }
         // borrow user info for this pool
         let mut user_info = try_from_slice_unchecked::<UserInfo>(&user_info_account_info.data.borrow())?;
 
