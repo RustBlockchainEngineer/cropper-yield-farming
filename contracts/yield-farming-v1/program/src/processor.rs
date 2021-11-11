@@ -1197,14 +1197,14 @@ impl Processor {
         if farm_pool.last_timestamp >= cur_timestamp {
             return Ok(());
         }
-        farm_pool.last_timestamp = cur_timestamp;
 
         if lp_balance == 0 {
+            farm_pool.last_timestamp = cur_timestamp;
             return Ok(());
         }
         // update reward per share net and last distributed timestamp
         farm_pool.update_share(cur_timestamp, lp_balance, reward_balance)?;
-        
+        farm_pool.last_timestamp = cur_timestamp;
         Ok(())
     }
     pub fn harvest<'a>(
