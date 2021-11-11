@@ -1034,6 +1034,15 @@ impl Processor {
 
         // add reward
         if amount > 0 {
+
+            //update this pool with up-to-date, distribute reward token 
+            Self::update_pool(
+                &mut farm_pool,
+                cur_timestamp,
+                pool_lp_token_data.amount,
+                pool_reward_token_data.amount
+            )?;
+
             // transfer reward token amount from user's reward token account to pool's reward token account
             Self::token_transfer(
                 farm_id_info.key,
@@ -1044,21 +1053,6 @@ impl Processor {
                 farm_pool.nonce, 
                 amount
             )?;
-
-            // borrow pool lp token mint account data
-            //let pool_mint = Mint::unpack_from_slice(&pool_lp_mint_info.data.borrow())?;
-
-            //update this pool with up-to-date
-            // Self::update_pool(
-            //     &mut farm_pool,
-            //     cur_timestamp,
-            //     pool_lp_token_data.amount, 
-            //     pool_reward_token_data.amount
-            // )?;
-
-            // let duration = farm_pool.end_timestamp - cur_timestamp;
-            // let added_reward_per_second = amount / duration; 
-            // farm_pool.reward_per_timestamp += added_reward_per_second;
         }
 
         // store farm pool account data to network
