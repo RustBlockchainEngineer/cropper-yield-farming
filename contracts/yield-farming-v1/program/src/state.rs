@@ -107,6 +107,11 @@ impl FarmPool {
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?
                     .checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
 
+        msg!("pending_rewards():deposit_balance = {}",deposit_balance.to_imprecise().ok_or(FarmError::PreciseError)?);
+        msg!("pending_rewards():reward_per_share_net = {}",reward_per_share_net.to_imprecise().ok_or(FarmError::PreciseError)?);
+        msg!("pending_rewards():reward_multipler = {}",reward_multipler.to_imprecise().ok_or(FarmError::PreciseError)?);
+        msg!("pending_rewards():reward_debt = {}",reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?);
+
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
 
