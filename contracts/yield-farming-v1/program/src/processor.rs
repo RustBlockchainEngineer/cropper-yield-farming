@@ -1222,7 +1222,7 @@ impl Processor {
         let pending: u64 = farm_pool.pending_rewards(user_info)?;
         msg!("deposit={}", user_info.deposit_balance);
         msg!("reward_debt={}", user_info.reward_debt);
-        msg!("pending={}", user_info.pending);
+        msg!("pending={}", pending);
 
         // harvest
         if pending > 0 {
