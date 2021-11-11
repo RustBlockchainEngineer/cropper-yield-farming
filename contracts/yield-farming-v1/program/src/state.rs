@@ -11,6 +11,7 @@ use {
     solana_program::{
         pubkey::{Pubkey},
         program_error::ProgramError,
+        msg
     },
     spl_math::{precise_number::PreciseNumber},
     std::convert::TryFrom,
