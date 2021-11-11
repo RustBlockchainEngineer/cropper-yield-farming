@@ -431,6 +431,8 @@ impl Processor {
         let rent_info = next_account_info(account_info_iter)?;
         let system_info = next_account_info(account_info_iter)?;
 
+        msg!("validating ... ");
+
         // check if rent sysvar program id is correct
         if *rent_info.key != Pubkey::from_str(RENT_SYSVAR_ID).map_err(|_| FarmError::InvalidPubkey)? {
             return Err(FarmError::InvalidRentSysvarId.into());
@@ -454,6 +456,8 @@ impl Processor {
             return Err(FarmError::NotInitializedProgramData.into());
         }
 
+        msg!("getting data ... ");
+
         let program_data = try_from_slice_unchecked::<FarmProgram>(&farm_program_info.data.borrow())?;
         
         // get clock from clock sysvar account information
@@ -466,6 +470,8 @@ impl Processor {
         let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
 
         if user_info_account_info.data_is_empty() {
+            msg!("creating user info account ... ");
+
             let seeds = [
                 PREFIX.as_bytes(),
                 farm_id_info.key.as_ref(),
@@ -495,9 +501,13 @@ impl Processor {
                 ],
             )?;
         }
-        
+
+        msg!("getting user data ... ");
+
         // borrow user info for this pool
         let mut user_info = try_from_slice_unchecked::<UserInfo>(&user_info_account_info.data.borrow())?;
+
+        msg!("validating user & farm ... ");
 
         //singers - check if depositor is signer
         if !depositor_info.is_signer {
@@ -564,6 +574,8 @@ impl Processor {
                 return Err(FarmError::InvalidOwner.into());
         }
 
+        msg!("getting token informations ... ");
+
         let user_lp_token_data = Account::unpack_from_slice(&user_lp_token_account_info.data.borrow())?;
         let pool_lp_token_data = Account::unpack_from_slice(&pool_lp_token_account_info.data.borrow())?;
         let user_reward_token_data = Account::unpack_from_slice(&user_reward_token_account_info.data.borrow())?;
@@ -598,6 +610,8 @@ impl Processor {
             return Err(FarmError::InvalidProgramAddress.into());
         }
 
+        msg!("updating pool ... ");
+
         //update this pool with up-to-date, distribute reward token 
         Self::update_pool(
             &mut farm_pool,
@@ -608,6 +622,7 @@ impl Processor {
 
         // harvest user's pending rewards
         if user_info.deposit_balance > 0 {
+            msg!("harvesting ... ");
             Self::harvest(
                 &farm_id_info.clone(), 
                 &token_program_info.clone(), 
@@ -623,6 +638,8 @@ impl Processor {
 
         // deposit (stake lp token)
         if amount > 0 {
+            msg!("deposting token ... ");
+
             // transfer lp token amount from user's lp token account to pool's lp token pool
             Self::token_transfer(
                 farm_id_info.key,

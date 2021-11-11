@@ -155,6 +155,10 @@ pub enum FarmInstruction {
     ///   7. `[]` amount
     ///   8. `[]` program id
     PayFarmFee(u64),
+
+    CreateAndReward,
+    SupplyAndStake,
+    UnstakeAndRemove,
 }
 
 // below functions are used to test above instructions in the rust test side

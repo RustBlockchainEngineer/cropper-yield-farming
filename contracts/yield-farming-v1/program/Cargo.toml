@@ -1,10 +1,10 @@
 
 [package]
-name = "cropper_farm_v1"
+name = "cropper_farm_v1_test20"
 version = "1.0.0"
 description = "cropper yield farming program"
 authors = ["Hongbo Li"]
-repository = "https://github.com/solana-labs/solana"
+repository = ""
 license = "Apache-2.0"
 homepage = "https://solana.com/"
 edition = "2018"
