@@ -969,7 +969,7 @@ impl Processor {
 
         
         // borrow farm pool account data
-        let farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
+        let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
 
         // check if given creator is farm owner
         // if not, returns WrongManager error
