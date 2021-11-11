@@ -140,6 +140,9 @@ impl FarmPool {
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
     pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64, _reward_balance:u64) -> Result<(), ProgramError>{
+        msg!("cur_timestamp {}", cur_timestamp);
+        msg!("_lp_balance {}", _lp_balance);
+        msg!("_reward_balance {}", _reward_balance);
         let mut _calc_timestamp = cur_timestamp;
         if cur_timestamp > self.end_timestamp {
             _calc_timestamp = self.end_timestamp;
