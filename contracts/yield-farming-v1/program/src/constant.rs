@@ -1,7 +1,7 @@
 /// constants declaration file
 
 /// mode of mainnet-beta or devnet, in case of mainnet-beta - const DEVNET_MODE:bool = false;
-const DEVNET_MODE:bool = true;
+const DEVNET_MODE:bool = false;
 
 /// Farm additaional fee
 /// To create new farm without CRP token pairing, the creator must pay this additional farm fee as stable coin (USDC)
