@@ -655,10 +655,8 @@ impl Processor {
             user_info.deposit_balance += amount;
         }
         
-        if is_user_info_zero_account {
-            // update user's reward debt
-            user_info.reward_debt = farm_pool.get_new_reward_debt(&user_info)?;
-        }
+        // update reward debt
+        user_info.reward_debt = farm_pool.get_new_reward_debt(&user_info)?;
 
         // save user's new info to network
         user_info
