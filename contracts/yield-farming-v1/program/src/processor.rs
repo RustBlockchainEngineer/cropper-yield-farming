@@ -1144,7 +1144,9 @@ impl Processor {
     )->Result<(), ProgramError>{
         // get pending amount
         let pending: u64 = farm_pool.pending_rewards(user_info)?;
-
+        msg!("deposit={}", user_info.deposit_balance);
+        msg!("reward_debt={}", user_info.reward_debt);
+        msg!("pending={}", pending);
         // harvest
         if pending > 0 {
             // harvest fee
