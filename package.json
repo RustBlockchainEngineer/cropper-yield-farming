@@ -8,9 +8,9 @@
     "switch-testnet":"solana config set --url testnet",
     "switch-mainnet-beta":"solana config set --url mainnet-beta",
     "start-server": "solana-test-validator",
-    "build:v1": "cargo build-bpf --manifest-path=./contracts/yield-farming-v1/program/Cargo.toml --bpf-out-dir=dist",
-    "clean:v1": "cargo clean --manifest-path=./contracts/yield-farming-v1/program/Cargo.toml && rm -rf ./dist",
-    "deploy:v1":"solana program deploy dist/yield-farming-v1.so",
-    "test:v1": "cargo test-bpf --manifest-path=./contracts/yield-farming-v1/program/Cargo.toml"
+    "build:devnet": "cargo build-bpf --manifest-path=./contracts/yield-farming-v1/program/Cargo.toml --bpf-out-dir=dist --features devnet",
+    "build:mainnet": "cargo build-bpf --manifest-path=./contracts/yield-farming-v1/program/Cargo.toml --bpf-out-dir=dist",
+    "clean": "cargo clean --manifest-path=./contracts/yield-farming-v1/program/Cargo.toml && rm -rf ./dist",
+    "test": "cargo test-bpf --manifest-path=./contracts/yield-farming-v1/program/Cargo.toml"
   }
 }
