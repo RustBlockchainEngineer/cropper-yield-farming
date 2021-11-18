@@ -1,6 +1,6 @@
 
 [package]
-name = "cropper_farm_v1_demo_1"
+name = "cropper_farm_v1"
 version = "1.0.0"
 description = "cropper yield farming program"
 authors = ["Hongbo Li"]
