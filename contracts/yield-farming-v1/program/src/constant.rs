@@ -1,14 +1,25 @@
 /// constants declaration file
 
 /// mode of mainnet-beta or devnet, in case of mainnet-beta - const DEVNET_MODE:bool = false;
-const DEVNET_MODE:bool = false;
+
+const DEVNET_MODE:bool = {
+    #[cfg(feature = "devnet")]
+    {
+        true
+    }
+    #[cfg(not(feature = "devnet"))]
+    {
+        false
+    }
+};
+
 
 /// Farm additaional fee
 /// To create new farm without CRP token pairing, the creator must pay this additional farm fee as stable coin (USDC)
 /// If the creator doesn't pay farm fee, displays "Not Allowed" instead of "Stake" button
 /// So creator and farmers can't stake/unstake/harvest
 
-pub const VERSION:u8 = 1;
+pub const VERSION:u8 = 2;
 pub const PREFIX:&str = "cropperfarm";
 
 /// initial super owner of this program. this owner can change program state
