@@ -155,9 +155,6 @@ pub enum FarmInstruction {
     ///   7. `[]` amount
     ///   8. `[]` program id
     PayFarmFee(u64),
-
-    // SupplyAndStake,
-    // UnstakeAndRemove,
 }
 
 // below functions are used to test above instructions in the rust test side
@@ -330,7 +327,6 @@ pub fn add_reward(
     owner: &Pubkey,
     user_reward_token_account: &Pubkey,
     pool_reward_token_account: &Pubkey,
-    pool_lp_token_account: &Pubkey,
     pool_lp_mint_info: &Pubkey,
     program_data_account: &Pubkey,
     token_program_id: &Pubkey,
@@ -343,7 +339,6 @@ pub fn add_reward(
         AccountMeta::new_readonly(*owner, true),
         AccountMeta::new(*user_reward_token_account, false),
         AccountMeta::new(*pool_reward_token_account, false),
-        AccountMeta::new(*pool_lp_token_account, false),
         AccountMeta::new(*pool_lp_mint_info, false),
         AccountMeta::new(*program_data_account, false),
         AccountMeta::new(*token_program_id, false),
