@@ -1142,11 +1142,16 @@ impl Processor {
         farm_pool:&FarmPool,
         user_info:&mut UserInfo
     )->Result<(), ProgramError>{
-        // get pending amount
-        let pending: u64 = farm_pool.pending_rewards(user_info)?;
+        let mut pending: u64 = farm_pool.pending_rewards(user_info)?;
         msg!("deposit={}", user_info.deposit_balance);
         msg!("reward_debt={}", user_info.reward_debt);
         msg!("pending={}", pending);
+
+        let pool_reward_token_data = Account::unpack_from_slice(&pool_reward_token_account_info.data.borrow())?;
+
+        if pool_reward_token_data.amount < pending {
+            pending = pool_reward_token_data.amount;
+        }
         // harvest
         if pending > 0 {
             // harvest fee
