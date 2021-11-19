@@ -364,7 +364,7 @@ impl Processor {
         farm_pool.last_timestamp = start_timestamp;
 
         // store reward per second
-        farm_pool.reward_per_timestamp = 0;
+        farm_pool.remained_reward_amount = 0;
 
         // store start time of this farm
         farm_pool.start_timestamp = start_timestamp;
@@ -616,8 +616,7 @@ impl Processor {
         Self::update_pool(
             &mut farm_pool,
             cur_timestamp,
-            pool_lp_token_data.amount,
-            pool_reward_token_data.amount
+            pool_lp_token_data.amount
         )?;
 
         // harvest user's pending rewards
@@ -850,8 +849,7 @@ impl Processor {
         Self::update_pool(
             &mut farm_pool,
             cur_timestamp,
-            pool_lp_token_data.amount, 
-            pool_reward_token_data.amount
+            pool_lp_token_data.amount
         )?;
 
         // harvest user's pending rewards
@@ -1037,8 +1035,7 @@ impl Processor {
             Self::update_pool(
                 &mut farm_pool,
                 cur_timestamp,
-                pool_lp_token_data.amount,
-                pool_reward_token_data.amount
+                pool_lp_token_data.amount
             )?;
 
             // transfer reward token amount from user's reward token account to pool's reward token account
@@ -1051,6 +1048,8 @@ impl Processor {
                 farm_pool.nonce, 
                 amount
             )?;
+
+            farm_pool.remained_reward_amount += amount;
         }
 
         // store farm pool account data to network
@@ -1183,7 +1182,6 @@ impl Processor {
         farm_pool: &mut FarmPool, 
         cur_timestamp: u64, 
         lp_balance: u64, 
-        reward_balance: u64, 
     ) -> Result<(), ProgramError>{
         // check if valid current timestamp
         if farm_pool.last_timestamp >= cur_timestamp {
@@ -1195,7 +1193,7 @@ impl Processor {
             return Ok(());
         }
         // update reward per share net and last distributed timestamp
-        farm_pool.update_share(cur_timestamp, lp_balance, reward_balance)?;
+        farm_pool.update_share(cur_timestamp, lp_balance)?;
         farm_pool.last_timestamp = cur_timestamp;
         Ok(())
     }
