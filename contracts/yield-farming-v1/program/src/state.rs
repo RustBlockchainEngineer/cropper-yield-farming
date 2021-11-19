@@ -105,17 +105,19 @@ impl FarmPool {
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
         let reward_debt = PreciseNumber::new(user_info.reward_debt as u128).ok_or(FarmError::PreciseError)?;
-        if self.reward_per_share_net == 0 {
-            Ok(0)
+        
+        let mut result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
+                    .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
+
+        if result.to_imprecise() < reward_debt.to_imprecise() {
+            return Ok(0);
         }
-        let result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
-                    .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?
-                    .checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
+        result = result.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
 
         msg!("pending_rewards():deposit_balance = {}",deposit_balance.to_imprecise().ok_or(FarmError::PreciseError)?);
-        msg!("reward_per_share_net():reward_per_share_net = {}",reward_per_share_net.to_imprecise().ok_or(FarmError::PreciseError)?);
-        msg!("reward_multipler():reward_multipler = {}",reward_multipler.to_imprecise().ok_or(FarmError::PreciseError)?);
-        msg!("reward_debt():reward_debt = {}",reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?);
+        msg!("pending_rewards():reward_per_share_net = {}",reward_per_share_net.to_imprecise().ok_or(FarmError::PreciseError)?);
+        msg!("pending_rewards():reward_multipler = {}",reward_multipler.to_imprecise().ok_or(FarmError::PreciseError)?);
+        msg!("pending_rewards():reward_debt = {}",reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?);
 
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
