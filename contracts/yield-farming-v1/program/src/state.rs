@@ -109,7 +109,7 @@ impl FarmPool {
         let mut result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
 
-        if result.to_imprecise() < reward_debt.to_imprecise() {
+        if result.to_imprecise().ok_or(FarmError::PreciseError)? <= reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? {
             return Ok(0);
         }
         result = result.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
@@ -161,6 +161,7 @@ impl FarmPool {
     pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64, _reward_balance:u64) -> Result<(), ProgramError>{
         msg!("update_share() ...");
         if self.get_pool_version() == 0 {
+            msg!("converted pool version ...");
             self.reward_per_share_net = 0;
             self.remained_reward_amount = _reward_balance;
             self.last_timestamp = self.start_timestamp;
