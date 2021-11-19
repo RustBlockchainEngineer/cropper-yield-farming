@@ -108,7 +108,7 @@ impl FarmPool {
         let mut _reward_debt = user_info.reward_debt;
         msg!("_reward_debt ...{}",_reward_debt);
         if user_info.reward_debt < JUMP_DEBT {
-            msg!("put JUMP_DEBT"t);
+            msg!("put JUMP_DEBT");
             user_info.reward_debt = JUMP_DEBT;
         }
         _reward_debt -= JUMP_DEBT;
