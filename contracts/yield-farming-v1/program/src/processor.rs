@@ -1187,10 +1187,6 @@ impl Processor {
         lp_balance: u64, 
         reward_balance: u64, 
     ) -> Result<(), ProgramError>{
-        if farm_pool.end_timestamp < cur_timestamp {
-            farm_pool.last_timestamp = farm_pool.end_timestamp;
-            return Ok(());
-        }
         // check if valid current timestamp
         if farm_pool.last_timestamp >= cur_timestamp {
             return Ok(());
