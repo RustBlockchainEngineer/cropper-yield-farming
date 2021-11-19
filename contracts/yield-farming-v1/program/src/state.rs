@@ -105,21 +105,19 @@ impl FarmPool {
         let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
-        let jump_sharenet = PreciseNumber::new(JUMP_SHARENET as u128).ok_or(FarmError::PreciseError)?;
-        let jump_reward_debt = deposit_balance.checked_mul(&jump_sharenet).ok_or(FarmError::PreciseError)?
-        .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
-        let reward_debt = PreciseNumber::new(user_info.reward_debt as u128).ok_or(FarmError::PreciseError)?;
+        let mut _reward_debt = user_info.reward_debt;
+        if user_info.reward_debt < JUMP_DEBT {
+            user_info.reward_debt = JUMP_DEBT;
+            _reward_debt = 0;
+        }
+        else{
+            _reward_debt -= JUMP_DEBT;
+        }
+        let reward_debt = PreciseNumber::new(_reward_debt as u128).ok_or(FarmError::PreciseError)?;
         
         let mut result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
 
-        if self.reward_per_share_net >= JUMP_SHARENET && 
-            jump_reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? >  reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? 
-        {
-            msg!("here");
-            user_info.reward_debt = u64::try_from(jump_reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0);
-            msg!("pending_rewards():user_info.reward_debt = {}",user_info.reward_debt);
-        }
         result = result.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
 
         msg!("pending_rewards():deposit_balance = {}",deposit_balance.to_imprecise().ok_or(FarmError::PreciseError)?);
@@ -140,7 +138,7 @@ impl FarmPool {
         let result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
                     
-        Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
+        Ok(JUMP_DEBT + u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
     /// get harvest fee
     pub fn get_harvest_fee(&self, pending:u64, program_data:&FarmProgram) -> Result<u64, ProgramError>{
@@ -171,7 +169,8 @@ impl FarmPool {
         if self.get_pool_version() == 0 {
             msg!("converted pool version ...");
             self.remained_reward_amount = _reward_balance;
-            self.reward_per_share_net = JUMP_SHARENET;
+            self.reward_per_share_net = 0;
+            self.last_timestamp = self.start_timestamp;
             self.set_pool_version(1)
         }
 
