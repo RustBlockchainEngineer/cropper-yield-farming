@@ -1117,6 +1117,10 @@ impl Processor {
         cur_timestamp: u64, 
         lp_supply: u64, 
     ) -> Result<(), ProgramError>{
+        if farm_pool.end_timestamp < cur_timestamp {
+            farm_pool.last_timestamp = farm_pool.end_timestamp;
+            return Ok(());
+        }
         // check if valid current timestamp
         if farm_pool.last_timestamp >= cur_timestamp {
             return Ok(());
