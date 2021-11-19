@@ -116,7 +116,7 @@ impl FarmPool {
         if self.reward_per_share_net >= JUMP_SHARENET && 
             jump_reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? >  reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? 
         {
-            user_info.reward_debt = u64::try_from(jump_reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?).ok_or(FarmError::PreciseError)?;
+            user_info.reward_debt = u64::try_from(jump_reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0);
         }
         result = result.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
 
