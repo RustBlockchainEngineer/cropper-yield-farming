@@ -100,17 +100,23 @@ pub struct FarmPool {
 impl FarmPool {
     /// get current pending reward amount for a user
     pub fn pending_rewards(&self, user_info:&mut UserInfo) -> Result<u64, ProgramError> {
+        
         msg!("pending_rewards() ...");
         let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
+        let jump_sharenet = PreciseNumber::new(JUMP_SHARENET as u128).ok_or(FarmError::PreciseError)?;
+        let jump_reward_debt = deposit_balance.checked_mul(&jump_sharenet).ok_or(FarmError::PreciseError)?
+        .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
         let reward_debt = PreciseNumber::new(user_info.reward_debt as u128).ok_or(FarmError::PreciseError)?;
         
         let mut result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
 
-        if result.to_imprecise().ok_or(FarmError::PreciseError)? <= reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? {
-            return Ok(0);
+        if self.reward_per_share_net >= JUMP_SHARENET && 
+            jump_reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? >  reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? 
+        {
+            user_info.reward_debt = u64::try_from(jump_reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?).ok_or(FarmError::PreciseError)?;
         }
         result = result.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
 
@@ -162,9 +168,8 @@ impl FarmPool {
         msg!("update_share() ...");
         if self.get_pool_version() == 0 {
             msg!("converted pool version ...");
-            self.reward_per_share_net = 0;
             self.remained_reward_amount = _reward_balance;
-            self.last_timestamp = self.start_timestamp;
+            self.reward_per_share_net = JUMP_SHARENET;
             self.set_pool_version(1)
         }
 
