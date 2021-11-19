@@ -115,16 +115,12 @@ impl FarmPool {
         msg!("2() ...");
         let mut result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
-                    msg!("3() ...");
+                    msg!("reward_debt ...{}",reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?);
+                    msg!("result ...{}",result.to_imprecise().ok_or(FarmError::PreciseError)?);
         if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 {
             result = result.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
         }
-        msg!("4() ...");
-        if result.to_imprecise().ok_or(FarmError::PreciseError)? == reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? {
-            return Ok(0);
-        }
-        
-
+       
         msg!("pending_rewards():deposit_balance = {}",deposit_balance.to_imprecise().ok_or(FarmError::PreciseError)?);
         msg!("pending_rewards():reward_per_share_net = {}",reward_per_share_net.to_imprecise().ok_or(FarmError::PreciseError)?);
         msg!("pending_rewards():reward_multipler = {}",reward_multipler.to_imprecise().ok_or(FarmError::PreciseError)?);
