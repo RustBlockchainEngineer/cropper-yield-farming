@@ -52,6 +52,7 @@ pub struct FarmProgram {
     
 }
 
+
 /// Farm Pool struct
 #[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
@@ -139,7 +140,27 @@ impl FarmPool {
                     
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
-    pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64) -> Result<(), ProgramError>{
+    pub fn get_pool_version(&self)->u8 {
+        self.is_allowed / 10     
+    }
+    pub fn set_pool_version(&mut self, ver: u8) {
+        self.is_allowed = self.is_allowed % 10 + ver * 10;
+    }
+    pub fn is_allowed(&self)->bool{
+        self.is_allowed % 10 > 0
+    }
+    pub fn set_allowed(&mut self, is_allowed: u8)->u8{
+        self.is_allowed = (self.is_allowed / 10) * 10 + is_allowed;
+    }
+    pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64, _reward_balance:u64) -> Result<(), ProgramError>{
+
+        if self.get_pool_version() == 0 {
+            self.reward_per_share_net = 0
+            self.remained_reward_amount = _reward_balance;
+            self.last_timestamp = self.start_timestamp;
+            self.set_pool_version(1)
+        }
+
         msg!("cur_timestamp {}", cur_timestamp);
         msg!("_lp_balance {}", _lp_balance);
         msg!("remained_reward_amount {}", self.remained_reward_amount);
@@ -179,6 +200,7 @@ impl FarmPool {
         msg!("updated_share {}", updated_share.to_imprecise().ok_or(FarmError::PreciseError)?);
         self.reward_per_share_net = updated_share.to_imprecise().ok_or(FarmError::PreciseError)?;
 
+        
         Ok(())
     }
 }

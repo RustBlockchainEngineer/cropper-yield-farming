@@ -334,7 +334,7 @@ impl Processor {
         
         // Initialize farm account data
         // if not CRP token pairing,this farm is not allowed until creator pays farm fee
-        farm_pool.is_allowed = Self::is_allowed(amm_swap.token_a_mint(), amm_swap.token_b_mint())?;
+        farm_pool.set_allowed(Self::is_allowed(amm_swap.token_a_mint(), amm_swap.token_b_mint())?);
 
         // owner of this farm - creator
         farm_pool.owner = *creator_info.key;
@@ -520,7 +520,7 @@ impl Processor {
         }
 
         // farm account - check if this farm was allowed already
-        if farm_pool.is_allowed == 0 {
+        if !farm_pool.is_allowed() {
             return Err(FarmError::NotAllowed.into());
         }
         
@@ -616,7 +616,8 @@ impl Processor {
         Self::update_pool(
             &mut farm_pool,
             cur_timestamp,
-            pool_lp_token_data.amount
+            pool_lp_token_data.amount,
+            pool_reward_token_data.amount,
         )?;
 
         // harvest user's pending rewards
@@ -756,7 +757,7 @@ impl Processor {
         }
 
         // farm account - check if this farm was allowed already
-        if farm_pool.is_allowed == 0 {
+        if !farm_pool.is_allowed() {
             return Err(FarmError::NotAllowed.into());
         }
 
@@ -849,7 +850,8 @@ impl Processor {
         Self::update_pool(
             &mut farm_pool,
             cur_timestamp,
-            pool_lp_token_data.amount
+            pool_lp_token_data.amount,
+            pool_reward_token_data.amount,
         )?;
 
         // harvest user's pending rewards
@@ -1035,7 +1037,8 @@ impl Processor {
             Self::update_pool(
                 &mut farm_pool,
                 cur_timestamp,
-                pool_lp_token_data.amount
+                pool_lp_token_data.amount,
+                pool_reward_token_data.amount
             )?;
 
             // transfer reward token amount from user's reward token account to pool's reward token account
@@ -1168,7 +1171,7 @@ impl Processor {
         )?;
 
         // allow this farm to stake/unstake/harvest
-        farm_pool.is_allowed = 1;
+        farm_pool.set_allowed(1);
 
         // store farm account data to network
         farm_pool
@@ -1182,6 +1185,7 @@ impl Processor {
         farm_pool: &mut FarmPool, 
         cur_timestamp: u64, 
         lp_balance: u64, 
+        reward_balance: u64, 
     ) -> Result<(), ProgramError>{
         if farm_pool.end_timestamp < cur_timestamp {
             farm_pool.last_timestamp = farm_pool.end_timestamp;
@@ -1197,7 +1201,7 @@ impl Processor {
             return Ok(());
         }
         // update reward per share net and last distributed timestamp
-        farm_pool.update_share(cur_timestamp, lp_balance)?;
+        farm_pool.update_share(cur_timestamp, lp_balance, reward_balance)?;
         farm_pool.last_timestamp = cur_timestamp;
         Ok(())
     }
