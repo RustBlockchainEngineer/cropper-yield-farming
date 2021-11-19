@@ -106,11 +106,13 @@ impl FarmPool {
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
         let mut _reward_debt = user_info.reward_debt;
+        msg!("_reward_debt ...{}",_reward_debt);
         if user_info.reward_debt < JUMP_DEBT {
+            msg!("put JUMP_DEBT"t);
             user_info.reward_debt = JUMP_DEBT;
         }
         _reward_debt -= JUMP_DEBT;
-        msg!("1() ...");
+        msg!("_reward_debt ...{}",_reward_debt);
         let reward_debt = PreciseNumber::new(_reward_debt as u128).ok_or(FarmError::PreciseError)?;
         msg!("2() ...");
         let mut result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
