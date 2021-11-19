@@ -149,13 +149,13 @@ impl FarmPool {
     pub fn is_allowed(&self)->bool{
         self.is_allowed % 10 > 0
     }
-    pub fn set_allowed(&mut self, is_allowed: u8)->u8{
+    pub fn set_allowed(&mut self, is_allowed: u8){
         self.is_allowed = (self.is_allowed / 10) * 10 + is_allowed;
     }
     pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64, _reward_balance:u64) -> Result<(), ProgramError>{
 
         if self.get_pool_version() == 0 {
-            self.reward_per_share_net = 0
+            self.reward_per_share_net = 0;
             self.remained_reward_amount = _reward_balance;
             self.last_timestamp = self.start_timestamp;
             self.set_pool_version(1)
