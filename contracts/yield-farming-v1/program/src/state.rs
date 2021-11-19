@@ -100,6 +100,7 @@ pub struct FarmPool {
 impl FarmPool {
     /// get current pending reward amount for a user
     pub fn pending_rewards(&self, user_info:&mut UserInfo) -> Result<u64, ProgramError> {
+        msg!("pending_rewards() ...");
         let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
@@ -121,6 +122,7 @@ impl FarmPool {
 
     /// get total reward amount for a user so far
     pub fn get_new_reward_debt(&self, user_info:&UserInfo) -> Result<u64, ProgramError>{
+        msg!("get_new_reward_debt() ...");
         let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
@@ -132,7 +134,7 @@ impl FarmPool {
     }
     /// get harvest fee
     pub fn get_harvest_fee(&self, pending:u64, program_data:&FarmProgram) -> Result<u64, ProgramError>{
-        
+        msg!("get_harvest_fee() ...");
         let harvest_fee_numerator = PreciseNumber::new(program_data.harvest_fee_numerator as u128).ok_or(FarmError::PreciseError)?;
         let harvest_fee_denominator = PreciseNumber::new(program_data.harvest_fee_denominator as u128).ok_or(FarmError::PreciseError)?;
         let pending = PreciseNumber::new(pending as u128).ok_or(FarmError::PreciseError)?;
