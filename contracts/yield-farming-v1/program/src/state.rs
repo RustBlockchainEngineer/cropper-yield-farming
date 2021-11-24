@@ -52,6 +52,7 @@ pub struct FarmProgram {
     
 }
 
+
 /// Farm Pool struct
 #[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
@@ -99,25 +100,38 @@ pub struct FarmPool {
 impl FarmPool {
     /// get current pending reward amount for a user
     pub fn pending_rewards(&self, user_info:&mut UserInfo) -> Result<u64, ProgramError> {
+        
+        msg!("pending_rewards() ...");
         let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
-        let reward_debt = PreciseNumber::new(user_info.reward_debt as u128).ok_or(FarmError::PreciseError)?;
-
-        let result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
-                    .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?
-                    .checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
-
+        if user_info.reward_debt < JUMP_DEBT {
+            msg!("put JUMP_DEBT");
+            user_info.reward_debt = JUMP_DEBT;
+        }
+        let _reward_debt = user_info.reward_debt - JUMP_DEBT;
+        msg!("_reward_debt ...{}",_reward_debt);
+        let reward_debt = PreciseNumber::new(_reward_debt as u128).ok_or(FarmError::PreciseError)?;
+        msg!("2() ...");
+        let mut result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
+                    .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
+                    msg!("reward_debt ...{}",reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?);
+                    msg!("result ...{}",result.to_imprecise().ok_or(FarmError::PreciseError)?);
+        if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 {
+            result = result.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
+        }
+       
         msg!("pending_rewards():deposit_balance = {}",deposit_balance.to_imprecise().ok_or(FarmError::PreciseError)?);
-        msg!("reward_per_share_net():reward_per_share_net = {}",reward_per_share_net.to_imprecise().ok_or(FarmError::PreciseError)?);
-        msg!("reward_multipler():reward_multipler = {}",reward_multipler.to_imprecise().ok_or(FarmError::PreciseError)?);
-        msg!("reward_debt():reward_debt = {}",reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?);
+        msg!("pending_rewards():reward_per_share_net = {}",reward_per_share_net.to_imprecise().ok_or(FarmError::PreciseError)?);
+        msg!("pending_rewards():reward_multipler = {}",reward_multipler.to_imprecise().ok_or(FarmError::PreciseError)?);
+        msg!("pending_rewards():reward_debt = {}",reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?);
 
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
 
     /// get total reward amount for a user so far
     pub fn get_new_reward_debt(&self, user_info:&UserInfo) -> Result<u64, ProgramError>{
+        msg!("get_new_reward_debt() ...");
         let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
@@ -125,11 +139,11 @@ impl FarmPool {
         let result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
                     
-        Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
+        Ok(JUMP_DEBT + u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
     /// get harvest fee
     pub fn get_harvest_fee(&self, pending:u64, program_data:&FarmProgram) -> Result<u64, ProgramError>{
-        
+        msg!("get_harvest_fee() ...");
         let harvest_fee_numerator = PreciseNumber::new(program_data.harvest_fee_numerator as u128).ok_or(FarmError::PreciseError)?;
         let harvest_fee_denominator = PreciseNumber::new(program_data.harvest_fee_denominator as u128).ok_or(FarmError::PreciseError)?;
         let pending = PreciseNumber::new(pending as u128).ok_or(FarmError::PreciseError)?;
@@ -139,7 +153,28 @@ impl FarmPool {
                     
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
-    pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64) -> Result<(), ProgramError>{
+    pub fn get_pool_version(&self)->u8 {
+        self.is_allowed / 10     
+    }
+    pub fn set_pool_version(&mut self, ver: u8) {
+        self.is_allowed = self.is_allowed % 10 + ver * 10;
+    }
+    pub fn is_allowed(&self)->bool{
+        self.is_allowed % 10 > 0
+    }
+    pub fn set_allowed(&mut self, is_allowed: u8){
+        self.is_allowed = (self.is_allowed / 10) * 10 + is_allowed;
+    }
+    pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64, _reward_balance:u64) -> Result<(), ProgramError>{
+        msg!("update_share() ...");
+        if self.get_pool_version() == 0 {
+            msg!("converted pool version ...");
+            self.remained_reward_amount = _reward_balance;
+            self.reward_per_share_net = 0;
+            self.last_timestamp = self.start_timestamp;
+            self.set_pool_version(1)
+        }
+
         msg!("cur_timestamp {}", cur_timestamp);
         msg!("_lp_balance {}", _lp_balance);
         msg!("remained_reward_amount {}", self.remained_reward_amount);
@@ -179,6 +214,7 @@ impl FarmPool {
         msg!("updated_share {}", updated_share.to_imprecise().ok_or(FarmError::PreciseError)?);
         self.reward_per_share_net = updated_share.to_imprecise().ok_or(FarmError::PreciseError)?;
 
+        
         Ok(())
     }
 }

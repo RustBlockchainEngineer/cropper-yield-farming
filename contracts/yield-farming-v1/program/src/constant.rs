@@ -39,3 +39,6 @@ pub const ETH_MINT_ADDRESS:&str = if DEVNET_MODE {"2FPyTwcZLUg1MDrwsyoP4D6s1tM7h
 
 /// reward multipler constant
 pub const REWARD_MULTIPLER:u64 = 1000000000;
+
+/// JUMP_SHARENET
+pub const JUMP_DEBT:u64 = 10_000_000_000_000_000_000;
