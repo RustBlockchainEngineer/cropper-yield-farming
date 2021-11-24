@@ -156,6 +156,20 @@ pub enum FarmInstruction {
     ///   8. `[]` program id
     PayFarmFee(u64),
 
+    UpdateDualYield {
+        #[allow(dead_code)]
+        /// start timestamp
+        start_timestamp: u64,
+
+        #[allow(dead_code)]
+        /// end timestamp
+        end_timestamp: u64,
+
+        #[allow(dead_code)]
+        /// amount
+        amount: u64,
+    },
+
     // SupplyAndStake,
     // UnstakeAndRemove,
 }

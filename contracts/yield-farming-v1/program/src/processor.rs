@@ -90,6 +90,14 @@ impl Processor {
                 // Instruction: PayFarmFee
                 Self::process_pay_farm_fee(program_id, accounts, amount)
             }
+            FarmInstruction::UpdateDualYield {
+                start_timestamp,
+                end_timestamp,
+                amount
+            } => {
+                // Instruction: PayFarmFee
+                Self::process_update_dual_yield(program_id, accounts,start_timestamp, end_timestamp, amount)
+            }
         }
     }
 
@@ -1174,6 +1182,165 @@ impl Processor {
         farm_pool.set_allowed(1);
 
         // store farm account data to network
+        farm_pool
+            .serialize(&mut *farm_id_info.data.borrow_mut())
+            .map_err(|e| e.into())
+        
+    }
+
+    /// farm creator can add reward token to his farm
+    /// but can't remove once added
+    pub fn process_update_dual_yield(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        start_timestamp: u64,
+        end_timestamp: u64,
+        amount: u64,
+    ) -> ProgramResult {
+        msg!("adding reward ...");
+        // get account informations
+        let account_info_iter = &mut accounts.iter();
+
+        // farm account information to add reward
+        let farm_id_info = next_account_info(account_info_iter)?;
+
+        // authority information of this farm account
+        let authority_info = next_account_info(account_info_iter)?;
+
+        // creator account information who will add reward
+        let creator_info = next_account_info(account_info_iter)?;
+
+        // lp token account information in the creator's wallet
+        let user_reward_token_account_info = next_account_info(account_info_iter)?;
+
+        // reward token account information in the farm pool
+        let pool_reward_token_account_info = next_account_info(account_info_iter)?;
+
+        // lp token account information in the farm pool
+        let pool_lp_token_account_info = next_account_info(account_info_iter)?;
+
+        // lp token account information in the farm pool
+        let pool_lp_mint_info = next_account_info(account_info_iter)?;
+
+        // farm program data account info
+        let farm_program_info = next_account_info(account_info_iter)?;
+
+        // spl-token program address
+        let token_program_info = next_account_info(account_info_iter)?;
+
+        // clock account information to use timestamp
+        let clock_sysvar_info = next_account_info(account_info_iter)?;
+
+        // check if clock sysvar program id is correct
+        if *clock_sysvar_info.key != Pubkey::from_str(CLOCK_SYSVAR_ID).map_err(|_| FarmError::InvalidPubkey)? {
+            return Err(FarmError::InvalidClockSysvarId.into());
+        }
+
+        // check if given program account is correct
+        Self::assert_program_account(program_id, farm_program_info.key)?;
+
+        // check if given program data is initialized
+        if Self::is_zero_account(farm_program_info) {
+            return Err(FarmError::NotInitializedProgramData.into());
+        }
+
+        // get clock from clock sysvar account information
+        let clock = &Clock::from_account_info(clock_sysvar_info)?;
+
+        // get current timestamp(second)
+        let cur_timestamp: u64 = clock.unix_timestamp as u64;
+
+        
+        // borrow farm pool account data
+        let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
+
+        // check if given creator is farm owner
+        // if not, returns WrongManager error
+        if *creator_info.key != farm_pool.owner {
+            return Err(FarmError::WrongManager.into());
+        }
+
+        //singers - check if depositor is signer
+        if !creator_info.is_signer {
+            return Err(FarmError::InvalidSigner.into());
+        }
+
+        // farm account - check if the given program address and farm account are correct
+        if *authority_info.key != Self::authority_id(program_id, farm_id_info.key, farm_pool.nonce)? {
+            return Err(FarmError::InvalidProgramAddress.into());
+        }
+
+        // check if this farm ends
+        if cur_timestamp > farm_pool.end_timestamp {
+            return Err(FarmError::FarmEnded.into());
+        }
+
+        // token account - check if owner is saved token program
+        if  *user_reward_token_account_info.owner != farm_pool.token_program_id ||
+            *pool_reward_token_account_info.owner != farm_pool.token_program_id ||
+            *pool_lp_token_account_info.owner != farm_pool.token_program_id {
+                return Err(FarmError::InvalidOwner.into());
+        }
+
+        // token account - check if pool lp token account & pool reward token account is for given farm account
+        if  farm_pool.pool_reward_token_account != *pool_reward_token_account_info.key ||
+            farm_pool.pool_lp_token_account != *pool_lp_token_account_info.key {
+                return Err(FarmError::InvalidOwner.into());
+        }
+
+        let user_reward_token_data = Account::unpack_from_slice(&user_reward_token_account_info.data.borrow())?;
+        let pool_reward_token_data = Account::unpack_from_slice(&pool_reward_token_account_info.data.borrow())?;
+        let pool_lp_token_data = Account::unpack_from_slice(&pool_lp_token_account_info.data.borrow())?;
+
+        // token account - check if user token's owner is depositor
+        if  user_reward_token_data.owner != *creator_info.key ||
+            pool_reward_token_data.owner != *authority_info.key || 
+            pool_lp_token_data.owner != *authority_info.key {
+            return Err(FarmError::InvalidOwner.into());
+        }
+
+        // token account - check if user has enough token amount
+        if user_reward_token_data.amount < amount {
+            return Err(FarmError::NotEnoughBalance.into());
+        }
+
+        // pool mint - check if pool mint is current program's mint address
+        if *pool_lp_mint_info.key != farm_pool.pool_mint_address {
+            return Err(FarmError::WrongPoolMint.into());
+        }
+
+        // token program - check if given token program is correct
+        if *token_program_info.key != farm_pool.token_program_id {
+            return Err(FarmError::InvalidProgramAddress.into());
+        }
+
+
+        // add reward
+        if amount > 0 {
+
+            //update this pool with up-to-date, distribute reward token 
+            Self::update_pool(
+                &mut farm_pool,
+                cur_timestamp,
+                pool_lp_token_data.amount,
+                pool_reward_token_data.amount
+            )?;
+
+            // transfer reward token amount from user's reward token account to pool's reward token account
+            Self::token_transfer(
+                farm_id_info.key,
+                token_program_info.clone(), 
+                user_reward_token_account_info.clone(), 
+                pool_reward_token_account_info.clone(), 
+                creator_info.clone(), 
+                farm_pool.nonce, 
+                amount
+            )?;
+
+            farm_pool.remained_reward_amount += amount;
+        }
+
+        // store farm pool account data to network
         farm_pool
             .serialize(&mut *farm_id_info.data.borrow_mut())
             .map_err(|e| e.into())
