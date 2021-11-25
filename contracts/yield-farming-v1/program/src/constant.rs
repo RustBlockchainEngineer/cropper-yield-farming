@@ -19,8 +19,9 @@ const DEVNET_MODE:bool = {
 /// If the creator doesn't pay farm fee, displays "Not Allowed" instead of "Stake" button
 /// So creator and farmers can't stake/unstake/harvest
 
-pub const VERSION:u8 = 2;
+pub const VERSION:u8 = 3; //max is 25
 pub const PREFIX:&str = "cropperfarm";
+pub const DUAL_TAG:&str = "cropperfarm-dual";
 
 /// initial super owner of this program. this owner can change program state
 pub const INITIAL_SUPER_OWNER:&str = if DEVNET_MODE {"4GJ3z4skEHJADz3MVeNYBg4YV8H27rBQey2YYdiPC8PA"} else {"AwtDEd9GThBNWNahvLZUok1BiRULNQ86VruXkYAckCtV"};

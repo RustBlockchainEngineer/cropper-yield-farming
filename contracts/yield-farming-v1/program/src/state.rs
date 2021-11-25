@@ -17,7 +17,6 @@ use {
     std::convert::TryFrom,
 };
 
-
 /// Farm Pool struct
 #[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
@@ -49,9 +48,7 @@ pub struct FarmProgram {
 
     /// reward multipler
     pub reward_multipler: u64,
-    
 }
-
 
 /// Farm Pool struct
 #[repr(C)]
@@ -95,43 +92,30 @@ pub struct FarmPool {
 
     /// end time of this farm
     pub end_timestamp: u64,
-
 }
 impl FarmPool {
     /// get current pending reward amount for a user
     pub fn pending_rewards(&self, user_info:&mut UserInfo) -> Result<u64, ProgramError> {
         
-        msg!("pending_rewards() ...");
         let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
         if user_info.reward_debt < JUMP_DEBT {
-            msg!("put JUMP_DEBT");
             user_info.reward_debt = JUMP_DEBT;
         }
         let _reward_debt = user_info.reward_debt - JUMP_DEBT;
-        msg!("_reward_debt ...{}",_reward_debt);
         let reward_debt = PreciseNumber::new(_reward_debt as u128).ok_or(FarmError::PreciseError)?;
-        msg!("2() ...");
         let mut result = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
-                    msg!("reward_debt ...{}",reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?);
-                    msg!("result ...{}",result.to_imprecise().ok_or(FarmError::PreciseError)?);
         if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 {
             result = result.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
         }
-       
-        msg!("pending_rewards():deposit_balance = {}",deposit_balance.to_imprecise().ok_or(FarmError::PreciseError)?);
-        msg!("pending_rewards():reward_per_share_net = {}",reward_per_share_net.to_imprecise().ok_or(FarmError::PreciseError)?);
-        msg!("pending_rewards():reward_multipler = {}",reward_multipler.to_imprecise().ok_or(FarmError::PreciseError)?);
-        msg!("pending_rewards():reward_debt = {}",reward_debt.to_imprecise().ok_or(FarmError::PreciseError)?);
 
         Ok(u64::try_from(result.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0))
     }
 
     /// get total reward amount for a user so far
     pub fn get_new_reward_debt(&self, user_info:&UserInfo) -> Result<u64, ProgramError>{
-        msg!("get_new_reward_debt() ...");
         let deposit_balance = PreciseNumber::new(user_info.deposit_balance as u128).ok_or(FarmError::PreciseError)?;
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
@@ -143,7 +127,6 @@ impl FarmPool {
     }
     /// get harvest fee
     pub fn get_harvest_fee(&self, pending:u64, program_data:&FarmProgram) -> Result<u64, ProgramError>{
-        msg!("get_harvest_fee() ...");
         let harvest_fee_numerator = PreciseNumber::new(program_data.harvest_fee_numerator as u128).ok_or(FarmError::PreciseError)?;
         let harvest_fee_denominator = PreciseNumber::new(program_data.harvest_fee_denominator as u128).ok_or(FarmError::PreciseError)?;
         let pending = PreciseNumber::new(pending as u128).ok_or(FarmError::PreciseError)?;
@@ -166,18 +149,12 @@ impl FarmPool {
         self.is_allowed = (self.is_allowed / 10) * 10 + is_allowed;
     }
     pub fn update_share(&mut self, cur_timestamp:u64, _lp_balance:u64, _reward_balance:u64) -> Result<(), ProgramError>{
-        msg!("update_share() ...");
         if self.get_pool_version() == 0 {
-            msg!("converted pool version ...");
             self.remained_reward_amount = _reward_balance;
             self.reward_per_share_net = 0;
             self.last_timestamp = self.start_timestamp;
             self.set_pool_version(1)
         }
-
-        msg!("cur_timestamp {}", cur_timestamp);
-        msg!("_lp_balance {}", _lp_balance);
-        msg!("remained_reward_amount {}", self.remained_reward_amount);
 
         let mut _calc_timestamp = cur_timestamp;
         if cur_timestamp > self.end_timestamp {
@@ -185,20 +162,13 @@ impl FarmPool {
         }
 
         let remained_farm_duration = PreciseNumber::new((self.end_timestamp - self.last_timestamp) as u128).ok_or(FarmError::PreciseError)?;
-        msg!("remained_farm_duration {}", remained_farm_duration.to_imprecise().ok_or(FarmError::PreciseError)?);
         let reward_balance = PreciseNumber::new(self.remained_reward_amount as u128).ok_or(FarmError::PreciseError)?;
-        msg!("reward_balance {}", reward_balance.to_imprecise().ok_or(FarmError::PreciseError)?);
         let reward_per_timestamp = reward_balance
                                     .checked_div(&remained_farm_duration).ok_or(FarmError::PreciseError)?;
-        msg!("reward_per_timestamp {}", reward_per_timestamp.to_imprecise().ok_or(FarmError::PreciseError)?);
         let duration = PreciseNumber::new((_calc_timestamp - self.last_timestamp) as u128).ok_or(FarmError::PreciseError)?;
-        msg!("duration {}", duration.to_imprecise().ok_or(FarmError::PreciseError)?);
         let reward_multipler = PreciseNumber::new(REWARD_MULTIPLER as u128).ok_or(FarmError::PreciseError)?;
-        msg!("reward_multipler {}", reward_multipler.to_imprecise().ok_or(FarmError::PreciseError)?);
         let reward_per_share_net = PreciseNumber::new(self.reward_per_share_net as u128).ok_or(FarmError::PreciseError)?;
-        msg!("reward_per_share_net {}", reward_per_share_net.to_imprecise().ok_or(FarmError::PreciseError)?);
         let lp_balance = PreciseNumber::new(_lp_balance as u128).ok_or(FarmError::PreciseError)?;
-        msg!("lp_balance {}", lp_balance.to_imprecise().ok_or(FarmError::PreciseError)?);
 
         let mut reward = duration.checked_mul(&reward_per_timestamp).ok_or(FarmError::PreciseError)?;
         if reward.to_imprecise().ok_or(FarmError::PreciseError)? > self.remained_reward_amount as u128 {
@@ -207,14 +177,10 @@ impl FarmPool {
         
         self.remained_reward_amount -= u64::try_from(reward.to_imprecise().ok_or(FarmError::PreciseError)?).unwrap_or(0);
 
-        msg!("reward {}", reward.to_imprecise().ok_or(FarmError::PreciseError)?);
         let updated_share = reward_multipler.checked_mul(&reward).ok_or(FarmError::PreciseError)?
                             .checked_div(&lp_balance).ok_or(FarmError::PreciseError)?
                             .checked_add(&reward_per_share_net).ok_or(FarmError::PreciseError)?;
-        msg!("updated_share {}", updated_share.to_imprecise().ok_or(FarmError::PreciseError)?);
         self.reward_per_share_net = updated_share.to_imprecise().ok_or(FarmError::PreciseError)?;
-
-        
         Ok(())
     }
 }
@@ -233,6 +199,38 @@ pub struct UserInfo {
     /// current deposited balance
     pub deposit_balance: u64,
 
+    /// reward debt so far
+    pub reward_debt: u64,
+}
+
+/// Dual Reward pool struct
+#[repr(C)]
+#[derive(Clone, Debug, Default, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
+pub struct DualRewardPool {
+    
+    /// This account stores reward token
+    pub pool_reward_token_account: Pubkey,
+
+    /// reward token's mint address
+    pub reward_mint_address: Pubkey,
+
+    /// This represents the total reward amount what a farmer can receive for unit lp
+    pub reward_per_share_net: u128,
+
+    /// reward per second
+    pub remained_reward_amount: u64,
+
+    /// start time of this farm
+    pub start_timestamp: u64,
+
+    /// end time of this farm
+    pub end_timestamp: u64,
+}
+
+/// Dual User information struct
+#[repr(C)]
+#[derive(Clone, Debug, Default, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
+pub struct DualUserInfo {
     /// reward debt so far
     pub reward_debt: u64,
 }

@@ -135,6 +135,10 @@ pub enum FarmError {
      #[error("Invalid Clock Sysvar Id")]
      InvalidClockSysvarId,
 
+     /// InvalidDualYieldAddress
+     #[error("InvalidDualYieldAddress")]
+     InvalidDualYieldAddress,
+
 }
 impl From<FarmError> for ProgramError {
     fn from(e: FarmError) -> Self {

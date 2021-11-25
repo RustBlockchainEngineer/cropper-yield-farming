@@ -5,7 +5,7 @@ use {
     crate::{
         error::FarmError,
         instruction::{FarmInstruction},
-        state::{FarmProgram,FarmPool,UserInfo},
+        state::{FarmProgram,FarmPool,UserInfo, DualRewardPool, DualUserInfo},
         constant::*,
         utils::*
     },
@@ -90,13 +90,15 @@ impl Processor {
                 // Instruction: PayFarmFee
                 Self::process_pay_farm_fee(program_id, accounts, amount)
             }
-            FarmInstruction::UpdateDualYield {
+            FarmInstruction::InitializeDualYield {
                 start_timestamp,
                 end_timestamp,
-                amount
             } => {
                 // Instruction: PayFarmFee
-                Self::process_update_dual_yield(program_id, accounts,start_timestamp, end_timestamp, amount)
+                Self::process_initialize_dual_yield(program_id, accounts,start_timestamp, end_timestamp)
+            FarmInstruction::AddDualReward(amount) => {
+                // Instruction: AddDualReward
+                Self::process_add_dual_reward(program_id, accounts, amount)
             }
         }
     }
@@ -343,6 +345,8 @@ impl Processor {
         // Initialize farm account data
         // if not CRP token pairing,this farm is not allowed until creator pays farm fee
         farm_pool.set_allowed(Self::is_allowed(amm_swap.token_a_mint(), amm_swap.token_b_mint())?);
+
+        farm_pool.set_pool_version(VERSION);
 
         // owner of this farm - creator
         farm_pool.owner = *creator_info.key;
@@ -1069,132 +1073,10 @@ impl Processor {
             .map_err(|e| e.into())
         
     }
-    /// process PayFarmFee instruction
-    /// If this farm is not CRP token pairing , farm creator has to pay farm fee
-    /// So this farm is allowed to stake/unstake/harvest
-    pub fn process_pay_farm_fee(
+
+    pub fn process_add_dual_reward(
         program_id: &Pubkey,
         accounts: &[AccountInfo],
-        amount: u64,
-    ) -> ProgramResult {
-        msg!("paying farm fee ...");
-
-        // get account informations
-        let account_info_iter = &mut accounts.iter();
-
-        // farm account information to pay farm fee
-        let farm_id_info = next_account_info(account_info_iter)?;
-
-        // authority information of this farm account
-        let authority_info = next_account_info(account_info_iter)?;
-
-        // creator account information who will add reward
-        let creator_info = next_account_info(account_info_iter)?;
-
-        // USDC token account in the creator's wallet to pay farm fee as USDC stable coin
-        let user_usdc_token_account_info = next_account_info(account_info_iter)?;
-
-        // fee owner wallet account to collect all fees
-        let usdc_ata_info = next_account_info(account_info_iter)?;
-
-        // farm program data account info
-        let farm_program_info = next_account_info(account_info_iter)?;
-
-        // spl-token program address
-        let token_program_info = next_account_info(account_info_iter)?;
-
-        // check if given program account is correct
-        Self::assert_program_account(program_id, farm_program_info.key)?;
-
-        // check if given program data is initialized
-        if Self::is_zero_account(farm_program_info) {
-            return Err(FarmError::NotInitializedProgramData.into());
-        }
-
-        let program_data = try_from_slice_unchecked::<FarmProgram>(&farm_program_info.data.borrow())?;
-
-        // borrow farm pool account data
-        let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
-
-        // check if given creator is owner of this farm
-        // if not, returns WrongManager error
-        if *creator_info.key != farm_pool.owner {
-            return Err(FarmError::WrongManager.into());
-        }
-
-        // check if given program address and farm account address are correct
-        // if not returns InvalidProgramAddress
-        if *authority_info.key != Self::authority_id(program_id, farm_id_info.key, farm_pool.nonce)? {
-            return Err(FarmError::InvalidProgramAddress.into());
-        }
-
-        //singers - check if depositor is signer
-        if !creator_info.is_signer {
-            return Err(FarmError::InvalidSigner.into());
-        }
-
-        // token account - check if owner is saved token program
-        if  *user_usdc_token_account_info.owner != farm_pool.token_program_id {
-                return Err(FarmError::InvalidOwner.into());
-        }
-
-        let user_usdc_token_data = Account::unpack_from_slice(&user_usdc_token_account_info.data.borrow())?;
-        let usdc_ata_data = Account::unpack_from_slice(&usdc_ata_info.data.borrow())?;
-
-        // farm account - check fee owner
-        if program_data.fee_owner != usdc_ata_data.owner {
-            return Err(FarmError::InvalidFeeAccount.into());
-        }
-
-        // token account - check if user token's owner is depositor
-        if  user_usdc_token_data.owner != *creator_info.key {
-            return Err(FarmError::InvalidOwner.into());
-        }
-
-        // token account - check if user has enough token amount
-        if user_usdc_token_data.amount < program_data.farm_fee {
-            return Err(FarmError::NotEnoughBalance.into());
-        }
-
-        // token program - check if given token program is correct
-        if *token_program_info.key != farm_pool.token_program_id {
-            return Err(FarmError::InvalidProgramAddress.into());
-        }
-
-        // check if amount is same with FARM FEE
-        // if not, returns InvalidFarmFee error
-        if amount < program_data.farm_fee {
-            return Err(FarmError::InvalidFarmFee.into());
-        }
-
-        // transfer fee amount from user's USDC token account to fee owner's account
-        Self::token_transfer(
-            farm_id_info.key,
-            token_program_info.clone(), 
-            user_usdc_token_account_info.clone(), 
-            usdc_ata_info.clone(), 
-            creator_info.clone(), 
-            farm_pool.nonce, 
-            amount
-        )?;
-
-        // allow this farm to stake/unstake/harvest
-        farm_pool.set_allowed(1);
-
-        // store farm account data to network
-        farm_pool
-            .serialize(&mut *farm_id_info.data.borrow_mut())
-            .map_err(|e| e.into())
-        
-    }
-
-    /// farm creator can add reward token to his farm
-    /// but can't remove once added
-    pub fn process_update_dual_yield(
-        program_id: &Pubkey,
-        accounts: &[AccountInfo],
-        start_timestamp: u64,
-        end_timestamp: u64,
         amount: u64,
     ) -> ProgramResult {
         msg!("adding reward ...");
@@ -1341,6 +1223,314 @@ impl Processor {
         }
 
         // store farm pool account data to network
+        farm_pool
+            .serialize(&mut *farm_id_info.data.borrow_mut())
+            .map_err(|e| e.into())
+        
+    }
+    /// process PayFarmFee instruction
+    /// If this farm is not CRP token pairing , farm creator has to pay farm fee
+    /// So this farm is allowed to stake/unstake/harvest
+    pub fn process_pay_farm_fee(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        amount: u64,
+    ) -> ProgramResult {
+        msg!("paying farm fee ...");
+
+        // get account informations
+        let account_info_iter = &mut accounts.iter();
+
+        // farm account information to pay farm fee
+        let farm_id_info = next_account_info(account_info_iter)?;
+
+        // authority information of this farm account
+        let authority_info = next_account_info(account_info_iter)?;
+
+        // creator account information who will add reward
+        let creator_info = next_account_info(account_info_iter)?;
+
+        // USDC token account in the creator's wallet to pay farm fee as USDC stable coin
+        let user_usdc_token_account_info = next_account_info(account_info_iter)?;
+
+        // fee owner wallet account to collect all fees
+        let usdc_ata_info = next_account_info(account_info_iter)?;
+
+        // farm program data account info
+        let farm_program_info = next_account_info(account_info_iter)?;
+
+        // spl-token program address
+        let token_program_info = next_account_info(account_info_iter)?;
+
+        // check if given program account is correct
+        Self::assert_program_account(program_id, farm_program_info.key)?;
+
+        // check if given program data is initialized
+        if Self::is_zero_account(farm_program_info) {
+            return Err(FarmError::NotInitializedProgramData.into());
+        }
+
+        let program_data = try_from_slice_unchecked::<FarmProgram>(&farm_program_info.data.borrow())?;
+
+        // borrow farm pool account data
+        let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
+
+        // check if given creator is owner of this farm
+        // if not, returns WrongManager error
+        if *creator_info.key != farm_pool.owner {
+            return Err(FarmError::WrongManager.into());
+        }
+
+        // check if given program address and farm account address are correct
+        // if not returns InvalidProgramAddress
+        if *authority_info.key != Self::authority_id(program_id, farm_id_info.key, farm_pool.nonce)? {
+            return Err(FarmError::InvalidProgramAddress.into());
+        }
+
+        //singers - check if depositor is signer
+        if !creator_info.is_signer {
+            return Err(FarmError::InvalidSigner.into());
+        }
+
+        // token account - check if owner is saved token program
+        if  *user_usdc_token_account_info.owner != farm_pool.token_program_id {
+                return Err(FarmError::InvalidOwner.into());
+        }
+
+        let user_usdc_token_data = Account::unpack_from_slice(&user_usdc_token_account_info.data.borrow())?;
+        let usdc_ata_data = Account::unpack_from_slice(&usdc_ata_info.data.borrow())?;
+
+        // farm account - check fee owner
+        if program_data.fee_owner != usdc_ata_data.owner {
+            return Err(FarmError::InvalidFeeAccount.into());
+        }
+
+        // token account - check if user token's owner is depositor
+        if  user_usdc_token_data.owner != *creator_info.key {
+            return Err(FarmError::InvalidOwner.into());
+        }
+
+        // token account - check if user has enough token amount
+        if user_usdc_token_data.amount < program_data.farm_fee {
+            return Err(FarmError::NotEnoughBalance.into());
+        }
+
+        // token program - check if given token program is correct
+        if *token_program_info.key != farm_pool.token_program_id {
+            return Err(FarmError::InvalidProgramAddress.into());
+        }
+
+        // check if amount is same with FARM FEE
+        // if not, returns InvalidFarmFee error
+        if amount < program_data.farm_fee {
+            return Err(FarmError::InvalidFarmFee.into());
+        }
+
+        // transfer fee amount from user's USDC token account to fee owner's account
+        Self::token_transfer(
+            farm_id_info.key,
+            token_program_info.clone(), 
+            user_usdc_token_account_info.clone(), 
+            usdc_ata_info.clone(), 
+            creator_info.clone(), 
+            farm_pool.nonce, 
+            amount
+        )?;
+
+        // allow this farm to stake/unstake/harvest
+        farm_pool.set_allowed(1);
+
+        // store farm account data to network
+        farm_pool
+            .serialize(&mut *farm_id_info.data.borrow_mut())
+            .map_err(|e| e.into())
+        
+    }
+
+    /// farm creator can add reward token to his farm
+    /// but can't remove once added
+    pub fn process_initialize_dual_yield(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        start_timestamp: u64,
+        end_timestamp: u64,
+    ) -> ProgramResult {
+        msg!("initialize dual yield ...");
+        // get account informations
+        // get all account informations from accounts array by using iterator
+        let account_info_iter = &mut accounts.iter();
+        
+        // farm pool account info to create newly
+        let farm_id_info = next_account_info(account_info_iter)?;
+
+        // authority of farm pool account
+        let authority_info = next_account_info(account_info_iter)?;
+
+        // dual_yield key
+        let dual_yield_info = next_account_info(account_info_iter)?;
+
+        // creator wallet account information
+        let creator_info = next_account_info(account_info_iter)?;
+
+        // reward token account information to store reward token in the pool
+        let pool_reward_token_account_info = next_account_info(account_info_iter)?;
+
+        // reward token's mint account information
+        let reward_mint_info = next_account_info(account_info_iter)?;
+
+        // farm program data account info
+        let farm_program_info = next_account_info(account_info_iter)?;
+
+        // check if given program account is correct
+        Self::assert_program_account(program_id, farm_program_info.key)?;
+
+        // check if given program account is correct
+        Self::assert_dual_yield_account(program_id, farm_id_info.key, dual_yield_info.key)?;
+
+        // check if given program data is initialized
+        if Self::is_zero_account(farm_program_info) {
+            return Err(FarmError::NotInitializedProgramData.into());
+        }
+
+        let program_data = try_from_slice_unchecked::<FarmProgram>(&farm_program_info.data.borrow())?;
+
+        // check if this farm account was created by this program with authority and nonce
+        // if fail, returns InvalidProgramAddress error
+        if *authority_info.key != Self::authority_id(program_id, farm_id_info.key, nonce)? {
+            return Err(FarmError::InvalidProgramAddress.into());
+        }
+
+        // check if farm creator is signer of this transaction
+        // if not, returns SignatureMissing error
+        if !creator_info.is_signer {
+            return Err(FarmError::SignatureMissing.into());
+        }
+
+        if program_data.super_owner != *creator_info.key {
+            return Err(FarmError::InvalidOwner.into());
+        }
+
+        // check if given farm was initialized already
+        if !dual_yield_info.data_is_empty() {
+            return Err(FarmError::AlreadyInUse.into());
+        }
+
+        // check if end time is later than start time
+        if end_timestamp <= start_timestamp {
+            return Err(FarmError::WrongPeriod.into());
+        }
+
+        let token_program_pubkey = Pubkey::from_str(TOKEN_PROGRAM_ID).map_err(|_| FarmError::InvalidPubkey)?;
+
+        // token account - check if owner is saved token program
+        if  *pool_reward_token_account_info.owner != token_program_pubkey {
+                return Err(FarmError::InvalidOwner.into());
+        }
+
+        let pool_reward_token_data = Account::unpack_from_slice(&pool_reward_token_account_info.data.borrow())?;
+        
+        // token account - check if user token's owner is depositor
+        if  pool_reward_token_data.owner != *dual_yield_info.key {
+            return Err(FarmError::InvalidOwner.into());
+        }
+
+        // token account - check if token mint is correct
+        if  pool_reward_token_data.mint != *reward_mint_info.key {
+            return Err(FarmError::WrongPoolMint.into()); 
+        }
+
+        if  pool_reward_token_data.delegate.is_some() {
+            return Err(FarmError::InvalidDelegate.into());
+        }
+        if  pool_reward_token_data.state != AccountState::Initialized {
+            return Err(FarmError::NotInitialized.into());
+        }
+        if  pool_reward_token_data.close_authority.is_some() {
+            return Err(FarmError::InvalidCloseAuthority.into());
+        }
+
+        if pool_mint.freeze_authority.is_some() {
+            return Err(FarmError::InvalidFreezeAuthority.into());
+        }
+
+        if dual_yield_info.data_is_empty() {
+            msg!("creating dual yield account ... ");
+
+            let seeds = [
+                DUAL_TAG.as_bytes(),
+                farm_id_info.key.as_ref()
+            ];
+
+            let (found_dual_yield_key, bump) = Pubkey::find_program_address(&seeds, program_id);
+
+            if found_dual_yield_key != *dual_yield_info.key {
+                return Err(FarmError::InvalidProgramAddress.into());
+            }
+
+            let size = std::mem::size_of::<Dual>();
+            // Create account with enough space
+            create_or_allocate_account_raw(
+                *program_id,
+                &dual_yield_info.clone(),
+                &rent_info.clone(),
+                &system_info.clone(),
+                &creator_info.clone(),
+                size,
+                &[
+                    PREFIX.as_bytes(),
+                    farm_id_info.key.as_ref(),
+                    &[bump],
+                ],
+            )?;
+        }
+
+        // borrow farm account data to initialize (mutable)
+        let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
+
+        
+        // Initialize farm account data
+        // if not CRP token pairing,this farm is not allowed until creator pays farm fee
+        farm_pool.set_allowed(Self::is_allowed(amm_swap.token_a_mint(), amm_swap.token_b_mint())?);
+
+        farm_pool.set_pool_version(VERSION);
+
+        // owner of this farm - creator
+        farm_pool.owner = *creator_info.key;
+
+        // initialize lp token account to store lp token
+        farm_pool.pool_lp_token_account = *pool_lp_token_account_info.key;
+
+        // initialize reward token account to store reward token
+        farm_pool.pool_reward_token_account = *pool_reward_token_account_info.key;
+
+        // store nonce to authorize this farm account
+        farm_pool.nonce = nonce;
+
+        // store lp token mint address
+        farm_pool.pool_mint_address = *pool_lp_mint_info.key;
+
+        // store spl-token program address
+        farm_pool.token_program_id = token_program_pubkey;
+
+        // store reward token mint address
+        farm_pool.reward_mint_address = *reward_mint_info.key;
+
+        // initialize total reward for unit lp so far
+        farm_pool.reward_per_share_net = 0;
+
+        // initialize lastest reward time
+        farm_pool.last_timestamp = start_timestamp;
+
+        // store reward per second
+        farm_pool.remained_reward_amount = 0;
+
+        // store start time of this farm
+        farm_pool.start_timestamp = start_timestamp;
+
+        // store end time of this farm
+        farm_pool.end_timestamp = end_timestamp;
+        
+        // serialize/store this initialized farm again
         farm_pool
             .serialize(&mut *farm_id_info.data.borrow_mut())
             .map_err(|e| e.into())
@@ -1527,6 +1717,20 @@ impl Processor {
         let (program_data_key, _bump) = Pubkey::find_program_address(&seeds, program_id);
         if program_data_key != *key {
             return Err(FarmError::InvalidProgramAddress.into());
+        }
+        else {
+            Ok(())
+        }
+    }
+    pub fn assert_dual_yield_account(program_id:&Pubkey, farm_key: &Pubkey, dual_yield_key: &Pubkey)->Result<(), ProgramError>{
+        let seeds = [
+            DUAL_TAG.as_bytes(),
+            farm_key.as_ref(),
+        ];
+
+        let (found_key, _bump) = Pubkey::find_program_address(&seeds, program_id);
+        if found_key != *dual_yield_key {
+            return Err(FarmError::InvalidDualYieldAddress.into());
         }
         else {
             Ok(())
