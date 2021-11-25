@@ -156,6 +156,8 @@ pub enum FarmInstruction {
     ///   8. `[]` program id
     PayFarmFee(u64),
 
+    MigrateUserAccountV3,
+
     InitializeDualYield {
         #[allow(dead_code)]
         /// start timestamp
@@ -168,6 +170,7 @@ pub enum FarmInstruction {
 
     AddDualReward(u64),
     RemoveDualReward(u64),
+    
 
     // SupplyAndStake,
     // UnstakeAndRemove,

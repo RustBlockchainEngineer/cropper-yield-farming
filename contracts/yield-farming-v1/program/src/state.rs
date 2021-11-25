@@ -203,11 +203,37 @@ pub struct UserInfo {
     pub reward_debt: u64,
 }
 
+/// User information struct
+#[repr(C)]
+#[derive(Clone, Debug, Default, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
+pub struct UserInfoV3 {
+
+    /// user's wallet address
+    pub wallet: Pubkey,
+
+    /// farm account address what this user deposited
+    pub farm_id: Pubkey,
+
+    /// current deposited balance
+    pub deposit_balance: u64,
+
+    /// reward debt A so far
+    pub reward_debt: u64,
+
+    /// reward debt B so far
+    pub reward_debt_dual: u64,
+
+    /// reserve
+    pub reserve: [u8;96]
+}
+
 /// Dual Reward pool struct
 #[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub struct DualRewardPool {
-    
+pub struct DualRewardPool { // for dual yield, etc
+    /// extend type
+    pub extend_type: u8,
+
     /// This account stores reward token
     pub pool_reward_token_account: Pubkey,
 
@@ -225,12 +251,8 @@ pub struct DualRewardPool {
 
     /// end time of this farm
     pub end_timestamp: u64,
+
+    /// reserve
+    pub reserve: [u8;96]
 }
 
-/// Dual User information struct
-#[repr(C)]
-#[derive(Clone, Debug, Default, PartialEq, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub struct DualUserInfo {
-    /// reward debt so far
-    pub reward_debt: u64,
-}
