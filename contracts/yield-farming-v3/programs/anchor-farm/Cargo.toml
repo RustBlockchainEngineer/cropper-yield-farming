@@ -1,0 +1,22 @@
+[package]
+name = "anchor_farm"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+no-entrypoint = []
+no-idl = []
+cpi = ["no-entrypoint"]
+default = []
+devnet = []
+
+[dependencies]
+anchor-lang = "0.18.2"
+anchor-spl = "0.18.2"
+bytemuck = "1.7.2"
+spl-math = { version = "0.1.0",features = [ "no-entrypoint" ] }
+cropper-liquidity-pool = { version = "2.1.0", path = "../amm-cropper-v1/cropper-lp/program", features = [ "no-entrypoint" ] }
