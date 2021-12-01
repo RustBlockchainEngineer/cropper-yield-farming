@@ -370,9 +370,9 @@ pub struct AddRewardDual <'info>{
 
 
 #[derive(Accounts)]
-#[instruction(global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8, user_info_nonce: u8, harvest_type: u8)]
+#[instruction(global_state_nonce: u8, farm_nonce: u8, user_info_nonce: u8, reward_type: u8)]
 pub struct Harvest <'info>{
-    pub depositor:  Signer<'info>,
+    pub harvester:  Signer<'info>,
 
     #[account(
         seeds = [GLOBAL_STATE_TAG],
@@ -388,20 +388,23 @@ pub struct Harvest <'info>{
     pub farm_seed: AccountInfo<'info>,
 
     #[account(mut,
-        seeds = [USER_INFO_TAG, farm.key().as_ref(), depositor.key().as_ref()],
+        seeds = [USER_INFO_TAG, farm.key().as_ref(), harvester.key().as_ref()],
         bump = user_info_nonce,
         )]
     pub user_info: ProgramAccount<'info, UserInfo>,
     
+    #[account(mut)]
+    pub pool_reward_token: Account<'info, TokenAccount>,
+    
     #[account(mut,
-        seeds = [FARM_POOL_LP_TAG, farm.key().as_ref()],
-        bump = farm_pool_lp_nonce,
+        constraint = user_reward_token.owner == harvester.key(),
     )]
-    pub pool_lp_token: Account<'info, TokenAccount>,
+    pub user_reward_token: Account<'info, TokenAccount>,
 
-    pub pool_reward_token: AccountInfo<'info>,
-    pub user_reward_token: AccountInfo<'info>,
-    pub fee_reward_token: AccountInfo<'info>,
+    #[account(mut,
+        constraint = fee_reward_token.owner == global_state.fee_owner,
+    )]
+    pub fee_reward_token: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
     pub clock: Sysvar<'info, Clock>,

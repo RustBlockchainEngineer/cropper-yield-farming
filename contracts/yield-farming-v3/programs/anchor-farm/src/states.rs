@@ -22,9 +22,6 @@ pub struct FarmProgram {
     /// AMM program id
     pub amm_program_id: Pubkey,
     
-    /// farm fee for not CRP token pairing farm
-    pub farm_fee: u64,
-
     /// harvest fee numerator
     pub harvest_fee_numerator: u64,
 
@@ -38,14 +35,6 @@ pub struct FarmProgram {
     pub reserve1: Pubkey,
     pub reserve2: Pubkey,
     pub reserve3: Pubkey,
-}
-impl FarmProgram {
-    pub fn assert_farm_fee(&self, amount: u64) -> ProgramResult {
-        if amount < self.farm_fee {
-            return Err(FarmError::NotEnoughBalance.into());
-        }
-        Ok(())
-    }
 }
 #[account]
 #[derive(Default)]
@@ -65,6 +54,9 @@ pub struct FarmPool {
     /// This account stores lp token
     pub pool_lp_token_account: Pubkey,
 
+    /// current pool's lp total balance
+    pub pool_lp_balance: u64,
+
     /// This account stores reward token
     pub pool_reward_token_account: Pubkey,
 
@@ -79,6 +71,9 @@ pub struct FarmPool {
 
     /// latest reward time
     pub last_timestamp: u64,
+
+    /// current real reward amount
+    pub current_rewards: u64,
 
     /// distributed reward amount
     pub distributed_rewards: u64,
@@ -104,6 +99,9 @@ pub struct FarmPool {
     /// latest reward time
     pub last_timestamp_dual: u64,
 
+    /// current real reward amount
+    pub current_rewards_dual: u64,
+
     /// distributed reward amount
     pub distributed_rewards_dual: u64,
 
@@ -124,7 +122,7 @@ pub struct FarmPool {
 }
 
 impl FarmPool {
-    pub fn pending_rewards(&self, user_info:&mut UserInfo) -> Result<u64> {
+    pub fn pending_rewards(&self, user_info:&UserInfo) -> Result<u64> {
         let deposit_balance = user_info.deposit_balance.to_precise()?;
         let reward_per_share_net = self.reward_per_share_net.to_precise()?;
         let reward_multipler = REWARD_MULTIPLER.to_precise()?;
@@ -161,6 +159,8 @@ impl FarmPool {
         Ok(result.to_u64()?)
     }
     pub fn pending_rewards_dual(&self, user_info:&mut UserInfo) -> Result<u64> {
+        self.assert_dual_yield()?;
+
         let deposit_balance = user_info.deposit_balance.to_precise()?;
         let reward_per_share_net = self.reward_per_share_net_dual.to_precise()?;
         let reward_multipler = REWARD_MULTIPLER.to_precise()?;
@@ -255,9 +255,7 @@ impl FarmPool {
         Ok(())
     }
     pub fn update_share_dual(&mut self, cur_timestamp: u64, param_lp_balance: u64, param_reward_balance: u64) -> ProgramResult{
-        if self.get_state() != FarmState::DualYield {
-            return Ok(());
-        }
+        self.assert_dual_yield()?;
 
         let mut _calc_timestamp = cur_timestamp;
         let end_timestamp = self.end_timestamp_dual;
@@ -312,7 +310,6 @@ impl FarmPool {
 
         Ok(())
     }
-    
         
     pub fn assert_dual_yield(&self) -> ProgramResult {
         if self.get_state() != FarmState::DualYield {
@@ -349,6 +346,18 @@ impl FarmPool {
         }
         Ok(removal_reward_amount)
     }
+    pub fn update<'info>(&mut self, user_info:&mut ProgramAccount<'info, UserInfo>, cur_timestamp: u64) -> ProgramResult {
+        self.update_share(cur_timestamp, self.pool_lp_balance, self.current_rewards)?;
+        self.update_share_dual(cur_timestamp, self.pool_lp_balance, self.current_rewards_dual)?;
+
+        if user_info.deposit_balance > 0 {
+            let pending = self.pending_rewards(user_info)?;
+            let pending_dual = self.pending_rewards_dual(user_info)?;
+            user_info.pending_rewards += pending;
+            user_info.pending_rewards_dual += pending_dual;
+        }
+        Ok(())
+    }
     
 
 }
@@ -357,20 +366,14 @@ impl FarmPool {
 #[account]
 #[derive(Default)]
 pub struct UserInfo {
-
-    /// user's wallet address
     pub wallet: Pubkey,
-
-    /// farm account address what this user deposited
     pub farm_id: Pubkey,
-
-    /// current deposited balance
     pub deposit_balance: u64,
 
-    /// reward debt A so far
+    pub pending_rewards: u64,
     pub reward_debt: u64,
 
-    /// reward debt B so far
+    pub pending_rewards_dual: u64,
     pub reward_debt_dual: u64,
 
     /// reserve
@@ -406,5 +409,37 @@ impl FarmState {
             2 => {FarmState::DualYield}
             _ => {FarmState::NotAllowed}
         }
+    }
+}
+
+
+/// Define valid farm states.
+#[derive(Clone, PartialEq)]
+pub enum RewardType {
+    SingleReward,
+    DualReward
+}
+impl RewardType {
+    pub fn single() -> Self {
+        RewardType::SingleReward
+    }
+    pub fn dual() -> Self {
+        RewardType::DualReward
+    }
+    pub fn tou8(state:RewardType) -> u8 {
+        state as u8
+    }
+    pub fn fromu8(num: u8) -> RewardType {
+        match num {
+            0 => {RewardType::SingleReward}
+            1 => {RewardType::DualReward}
+            _ => {RewardType::SingleReward}
+        }
+    }
+    pub fn is_single(num: u8) -> bool {
+        (RewardType::SingleReward as u8) == num
+    }
+    pub fn is_dual(num: u8) -> bool {
+        (RewardType::DualReward as u8) == num
     }
 }

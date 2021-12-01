@@ -17,12 +17,6 @@ const DEVNET_MODE:bool = {
     }
 };
 
-
-/// Farm additaional fee
-/// To create new farm without CRP token pairing, the creator must pay this additional farm fee as stable coin (USDC)
-/// If the creator doesn't pay farm fee, displays "Not Allowed" instead of "Stake" button
-/// So creator and farmers can't stake/unstake/harvest
-
 pub const VERSION:u8 = 3;
 
 /// initial super owner of this program. this owner can change program state

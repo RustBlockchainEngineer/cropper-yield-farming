@@ -1,9 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use crate::{
     constant::*,
     error::*,
-    states::*
 };
 use std::convert::TryFrom;
 use spl_math::{precise_number::PreciseNumber};
@@ -159,113 +157,17 @@ pub fn get_real_amount_to_withdraw(user_deposit_balance: u64, with_swap_action: 
     Ok(result)
 }
 
-pub fn harvest<'info>(
-    user_info:&mut UserInfo, 
-    global_state: &FarmProgram, 
-    reward_balance: u64, 
-    farm_nonce: u8,
-    token_program: &Program<'info, Token>,
-    pool_reward_token: &Account<'info, TokenAccount>,
-    fee_reward_token: &Account<'info, TokenAccount>,
-    user_reward_token: &Account<'info, TokenAccount>,
-    farm: &mut ProgramAccount<'info, FarmPool>,
-) -> ProgramResult{
-    let mut pending = farm.pending_rewards(user_info)?;
-    if reward_balance < pending {
-        pending = reward_balance;
-    }
 
-    if pending > 0 {
-        let harvest_fee = farm.get_harvest_fee(pending, global_state)?;
-        let user_pending = pending - harvest_fee;
-
-        let cpi_program = token_program.to_account_info();
-
-        let signer_seeds = &[
-            FARM_TAG, 
-            farm.seed_key.as_ref(),
-            &[farm_nonce]
-        ];
-        let signer = &[&signer_seeds[..]];
-
-        let cpi_accounts_fee = Transfer {
-            from: pool_reward_token.to_account_info(),
-            to: fee_reward_token.to_account_info(),
-            authority: farm.to_account_info(),
-        };
-        let cpi_ctx_fee = CpiContext::new_with_signer(cpi_program.clone(), cpi_accounts_fee, signer);
-        token::transfer(cpi_ctx_fee, harvest_fee)?;
-
-        let cpi_accounts_user = Transfer {
-            from: pool_reward_token.to_account_info(),
-            to: user_reward_token.to_account_info(),
-            authority: farm.to_account_info(),
-        };
-        let cpi_ctx_user = CpiContext::new_with_signer(cpi_program.clone(), cpi_accounts_user, signer);
-        token::transfer(cpi_ctx_user, user_pending)?;
-
-        farm.harvested_rewards += pending;
-
+pub fn assert_true(flag: bool) -> ProgramResult {
+    if !flag {
+        return Err(FarmError::NotAllowed.into());
     }
     Ok(())
 }
-
-pub fn harvest_dual<'info>(
-    user_info:&mut UserInfo, 
-    global_state: &FarmProgram, 
-    reward_balance: u64, 
-    farm_nonce: u8,
-    token_program: &Program<'info, Token>,
-    pool_reward_token: &Account<'info, TokenAccount>,
-    fee_reward_token: &Account<'info, TokenAccount>,
-    user_reward_token: &Account<'info, TokenAccount>,
-    farm: &mut ProgramAccount<'info, FarmPool>,
-) -> ProgramResult{
-    if farm.get_state() != FarmState::DualYield {
-        return Ok(());
-    }
-    let mut pending = farm.pending_rewards_dual(user_info)?;
-    if reward_balance < pending {
-        pending = reward_balance;
-    }
-
-    if pending > 0 {
-        let harvest_fee = farm.get_harvest_fee(pending, global_state)?;
-        let user_pending = pending - harvest_fee;
-
-        let cpi_program = token_program.to_account_info();
-
-        let signer_seeds = &[
-            FARM_TAG, 
-            farm.seed_key.as_ref(),
-            &[farm_nonce]
-        ];
-        let signer = &[&signer_seeds[..]];
-
-        let cpi_accounts_fee = Transfer {
-            from: pool_reward_token.to_account_info(),
-            to: fee_reward_token.to_account_info(),
-            authority: farm.to_account_info(),
-        };
-        let cpi_ctx_fee = CpiContext::new_with_signer(cpi_program.clone(), cpi_accounts_fee, signer);
-        token::transfer(cpi_ctx_fee, harvest_fee)?;
-
-        let cpi_accounts_user = Transfer {
-            from: pool_reward_token.to_account_info(),
-            to: user_reward_token.to_account_info(),
-            authority: farm.to_account_info(),
-        };
-        let cpi_ctx_user = CpiContext::new_with_signer(cpi_program.clone(), cpi_accounts_user, signer);
-        token::transfer(cpi_ctx_user, user_pending)?;
-
-        farm.harvested_rewards_dual += pending;
-
-    }
-    Ok(())
-}
-pub fn assert_usdc_mint(mint: &Pubkey)->ProgramResult {
-    if *mint != Pubkey::from_str(USDC_MINT_ADDRESS).map_err(|_| FarmError::InvalidPubkey)? {
-        return Err(FarmError::WrongMintAddress.into());
+pub fn assert_pda(seeds:&[&[u8]], program_id: &Pubkey, goal_key: &Pubkey) -> ProgramResult {
+    let (found_key, _bump) = Pubkey::find_program_address(seeds, program_id);
+    if found_key != *goal_key {
+        return Err(FarmError::InvalidProgramAddress.into());
     }
     Ok(())
 }
