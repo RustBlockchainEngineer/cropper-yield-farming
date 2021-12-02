@@ -1,16 +1,12 @@
 import * as anchor from '@project-serum/anchor';
-import { AnchorFarm } from '../target/types/anchor_farm';
+import { StablePool } from '../target/types/stable_pool';
 
 describe('anchor_farm', () => {
 
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
 
-  const program = anchor.workspace.AnchorFarm as anchor.Program<AnchorFarm>;
+  const program = anchor.workspace.AnchorFarm as anchor.Program<StablePool>;
 
-  it('Is initialized!', async () => {
-    // Add your test here.
-    const tx = await program.rpc.initialize({});
-    console.log("Your transaction signature", tx);
-  });
+  it('Is initialized!', async () => {});
 });
