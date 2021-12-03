@@ -1,0 +1,81 @@
+1. manage global state
+-create global state
+-update global state
+
+2. farm management
+-create new farm (single yield)
+-extend old farm
+-create dual farm
+-extend dual farm
+
+3. reward management
+-add single yield reward
+-add dual yield reward
+-remove dual reward
+
+4. yield farming operations
+-deposit
+-withdraw
+-harvest
+-harvest_dual
+
+5. detailed create farm operations
+-create new farm with start time >= end time
+-double create same farm
+-create single farm with wrong amm swap
+
+6. detailed create single farm operations
+-extend single farm duration with end time < origin end time
+-extend single farm duration before farm started
+-extend single farm duration after farm ended
+-extend single farm duration after adding additional rewards
+-extend single farm duration after change fee information of global state
+-extend single farm duration with zero total deposited balance
+-extend single farm duration with zero reward
+-extend single farm duration when it's dual farm
+-extend single farm duration after 3 users deposit, harvest, withdraw, 1 user has zero deposit balance
+
+7. detailed create dual farm 
+-create dual farm for not started farm
+-create dual farm for ended farm
+-create dual farm for existing dual farm
+-create dual farm for not allowed farm
+-create dual farm by farm creator
+-create dual farm with start time > end time
+-create dual farm with start time > current time
+-create dual farm with start time < current time
+-create dual farm with reward token of single farm
+-create dual farm with dual.start_time > single.end_time
+-create dual farm with dual.start_time < single.start_time
+-create dual farm with dual.end_time > single.end_time
+-create dual farm with dual.end_time < single.start_time
+
+8. detailed extend dual farm
+-extend dual farm for not started single farm
+-extend dual farm for not started dual farm
+-extend dual farm for end time > origin end time
+-extend dual farm for ended farm
+-extend dual farm after adding additional dual rewrads
+-extend dual farm after change fee information of global state
+-extend dual farm with zero total deposited balance
+-extend dual farm with zero dual reward
+-extend dual farm for single farm
+-extend dual farm for not created single farm
+-extend dual farm after 3 users deposit, harvest, withdraw, 1 user has zero deposit balance
+
+9. detailed add single reward
+-add single reward for not started single farm
+-add single reward for ended farm
+-add single reward for progressing farm
+
+10.detailed add dual reward
+-add single reward for not started single farm
+-add single reward for ended farm
+-add single reward for progressing farm
+-add single reward for not started dual farm
+-add single reward for 
+
+11.detailed remove dual reward
+12.detailed deposit
+13.detailed withdraw
+14.detailed harvest

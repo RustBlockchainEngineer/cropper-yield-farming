@@ -1,5 +1,5 @@
 [programs.devnet]
-anchor_farm = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+anchor_farm = "4QD8SXKev9GvNZ7Cd5CgoLeJQuneGZNMDbmYWiotUxeA"
 
 [registry]
 url = "https://anchor.projectserum.com"

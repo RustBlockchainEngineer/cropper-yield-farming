@@ -21,7 +21,7 @@ use crate::{
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
-pub mod stable_pool {
+pub mod anchor_farm {
     use super::*;
 
     pub fn create_global_state(ctx: Context<SetGlobalState>, global_state_nonce:u8,  harvest_fee_numerator: u64, harvest_fee_denominator: u64) -> ProgramResult { 
