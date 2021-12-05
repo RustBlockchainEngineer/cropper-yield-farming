@@ -20,7 +20,7 @@ const DEVNET_MODE:bool = {
 pub const VERSION:u8 = 3;
 
 /// initial super owner of this program. this owner can change program state
-pub const INITIAL_SUPER_OWNER:&str = if DEVNET_MODE {"4GJ3z4skEHJADz3MVeNYBg4YV8H27rBQey2YYdiPC8PA"} else {"AwtDEd9GThBNWNahvLZUok1BiRULNQ86VruXkYAckCtV"};
+pub const INITIAL_SUPER_OWNER:&str = if DEVNET_MODE {"61ZuXNtDC8LRV9xREgJv4rhQgU4woRN6BUWCCufppi8V"} else {"AwtDEd9GThBNWNahvLZUok1BiRULNQ86VruXkYAckCtV"};
 
 pub const TOKEN_PROGRAM_ID:&str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 pub const RENT_SYSVAR_ID:&str = "SysvarRent111111111111111111111111111111111";

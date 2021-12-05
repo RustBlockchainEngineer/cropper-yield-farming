@@ -1,3 +1,5 @@
+test users : 5
+
 1. manage global state
 -create global state
 -update global state
@@ -24,7 +26,7 @@
 -double create same farm
 -create single farm with wrong amm swap
 
-6. detailed create single farm operations
+6. detailed extend single farm operations
 -extend single farm duration with end time < origin end time
 -extend single farm duration before farm started
 -extend single farm duration after farm ended
@@ -69,13 +71,65 @@
 -add single reward for progressing farm
 
 10.detailed add dual reward
--add single reward for not started single farm
--add single reward for ended farm
--add single reward for progressing farm
--add single reward for not started dual farm
--add single reward for 
+-add dual reward for not started single farm
+-add dual reward for ended farm
+-add dual reward for progressing farm
+-add dual reward for not started dual farm
+-add dual reward for ended dual farm
 
 11.detailed remove dual reward
+-remove dual reward for not started single farm
+-remove dual reward for ended farm
+-remove dual reward for progressing farm
+-remove dual reward for not started dual farm
+-remove dual reward for ended dual farm
+-remove dual reward for progressing dual farm
+
 12.detailed deposit
+-deposit lp for not started single farm
+-deposit lp for ended single farm & progressing dual farm
+-deposit lp for ended single farm & not started dual farm
+-deposit lp for ended single farm & ened dual farm
+-deposit lp for not started dual farm
+-deposit lp for progressing single farm & not started dual farm
+-deposit lp for progressing single farm & ended dual farm
+-deposit lp for progressing single farm & progressing dual farm
+-deposit lp for extended single farm
+-deposit lp for extended dual farm
+-deposit lp for not allowed farm
+-deposit lp after adding additonal single reward
+-deposit lp after adding additonal dual reward
+-deposit lp after adding additonal single & dual reward
+-deposit first lp
+
 13.detailed withdraw
+-withdraw lp for not started single farm
+-withdraw lp for progressing single farm & ended dual farm
+-withdraw lp for ended single farm & ended dual farm
+-withdraw lp for ended single farm & progressing dual farm
+-withdraw lp for ended single farm & not started farm
+-withdraw lp after additonal single reward
+-withdraw lp after additonal dual reward
+-withdraw lp after adding addtional single & dual reward
+-withdraw lp for extended single farm
+-withdraw lp for extended dual farm
+-withdraw last lp
+
 14.detailed harvest
+-harvest single reward for not started farm
+-harvest dual reward for not started farm
+-harvest single reward for ended farm
+-harvest dual reward for ended faram
+-harvest dual reward & single reward
+-harvest single reward after additional single reward
+-harvest single reward after additional dual reward
+-harvest dual reward after additional single reward
+-harvest dual reward after additional dual reward
+-harvest single & dual reward for extended single farm
+-harvest single & dual reward for extended dual farm
+-harvest with zero user deposited balance
+-harvest with zero farm deposited balance
+-harvest for first deposit
+-harvest for last withdraw
+
+15.limitation tests
