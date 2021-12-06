@@ -3,6 +3,7 @@ use anchor_spl::token::{self,  Transfer};
 
 use crate::{
     instructions::*,
+    utils::*
 };
 
 pub fn process_add_reward_dual(ctx: Context<AddRewardDual>, _global_state_nonce: u8, _farm_nonce: u8, _farm_pool_lp_nonce: u8,  _farm_pool_reward_nonce: u8, _amount: u64) -> ProgramResult {
