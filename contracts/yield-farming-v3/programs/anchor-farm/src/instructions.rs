@@ -37,7 +37,7 @@ pub struct CreateFarm <'info>{
     #[account(
     seeds = [GLOBAL_STATE_TAG],
     bump = global_state_nonce,
-    
+    //constraint = global_state.amm_program_id == *amm_swap.owner,
     )]
     pub global_state:ProgramAccount<'info, FarmProgram>,
 
@@ -51,29 +51,29 @@ pub struct CreateFarm <'info>{
     pub new_farm: ProgramAccount<'info, FarmPool>,
     pub farm_seed: AccountInfo<'info>,
 
-    #[account(
-        constraint = !pool_lp_mint.freeze_authority.is_some(),
-    )]
-    pub pool_lp_mint: Account<'info, Mint>,
-    #[account(
-        constraint = !pool_reward_mint.freeze_authority.is_some()
-    )]
-    pub pool_reward_mint: Account<'info, Mint>,
-    #[account(init,
-        token::mint = pool_lp_mint,
-        token::authority = new_farm,
-        seeds = [FARM_POOL_LP_TAG, new_farm.key().as_ref()],
-        bump = farm_pool_lp_nonce,
-        payer = creator)]
-    pub pool_lp_token: Account<'info, TokenAccount>,
-    #[account(init,
-        token::mint = pool_reward_mint,
-        token::authority = new_farm,
-        seeds = [FARM_POOL_REWARD_TAG, new_farm.key().as_ref()],
-        bump = farm_pool_reward_nonce,
-        payer = creator)]
-    pub pool_reward_token: Account<'info, TokenAccount>,
-    pub amm_swap: AccountInfo<'info>,
+    // #[account(
+    //     constraint = !pool_lp_mint.freeze_authority.is_some(),
+    // )]
+    // pub pool_lp_mint: Account<'info, Mint>,
+    // #[account(
+    //     constraint = !pool_reward_mint.freeze_authority.is_some()
+    // )]
+    // pub pool_reward_mint: Account<'info, Mint>,
+    // #[account(init,
+    //     token::mint = pool_lp_mint,
+    //     token::authority = new_farm,
+    //     seeds = [FARM_POOL_LP_TAG, new_farm.key().as_ref()],
+    //     bump = farm_pool_lp_nonce,
+    //     payer = creator)]
+    // pub pool_lp_token: Account<'info, TokenAccount>,
+    // #[account(init,
+    //     token::mint = pool_reward_mint,
+    //     token::authority = new_farm,
+    //     seeds = [FARM_POOL_REWARD_TAG, new_farm.key().as_ref()],
+    //     bump = farm_pool_reward_nonce,
+    //     payer = creator)]
+    // pub pool_reward_token: Account<'info, TokenAccount>,
+    // pub amm_swap: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,

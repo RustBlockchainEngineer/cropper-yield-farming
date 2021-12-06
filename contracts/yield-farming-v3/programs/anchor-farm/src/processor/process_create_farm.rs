@@ -10,6 +10,7 @@ use crate::{
 use cropper_liquidity_pool::amm_stats::{SwapVersion};
 
 pub fn process_create_farm(ctx: Context<CreateFarm>, _global_state_nonce:u8, _farm_nonce: u8, _farm_pool_lp_nonce: u8, _farm_pool_reward_nonce: u8, _start_timestamp: u64, _end_timestamp: u64) -> ProgramResult {
+    return Ok(());
     let amm_swap = SwapVersion::unpack(&ctx.accounts.amm_swap.data.borrow())?;
     assert_amm_pool_mint(*amm_swap.pool_mint(), ctx.accounts.pool_lp_mint.key())?;
     
