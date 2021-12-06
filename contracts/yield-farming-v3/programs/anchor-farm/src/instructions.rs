@@ -51,14 +51,14 @@ pub struct CreateFarm <'info>{
     pub new_farm: ProgramAccount<'info, FarmPool>,
     pub farm_seed: AccountInfo<'info>,
 
-    // #[account(
-    //     constraint = !pool_lp_mint.freeze_authority.is_some(),
-    // )]
-    // pub pool_lp_mint: Account<'info, Mint>,
-    // #[account(
-    //     constraint = !pool_reward_mint.freeze_authority.is_some()
-    // )]
-    // pub pool_reward_mint: Account<'info, Mint>,
+    #[account(
+        constraint = !pool_lp_mint.freeze_authority.is_some(),
+    )]
+    pub pool_lp_mint: Account<'info, Mint>,
+    #[account(
+        constraint = !pool_reward_mint.freeze_authority.is_some()
+    )]
+    pub pool_reward_mint: Account<'info, Mint>,
     // #[account(init,
     //     token::mint = pool_lp_mint,
     //     token::authority = new_farm,
@@ -124,14 +124,14 @@ pub struct CreateDual <'info>{
 #[instruction(farm_nonce: u8, end_timestamp: u64)]
 pub struct ExtendFarm <'info>{
     #[account(
-        constraint = creator.key() == farm.owner
+        constraint = creator.key() == farm.owner, 
+        constraint = end_timestamp > farm.end_timestamp
     )]
     pub creator:  Signer<'info>,
 
     #[account(mut,
         seeds = [FARM_TAG, farm_seed.key.as_ref()],
         bump = farm_nonce,
-        constraint = end_timestamp > farm.end_timestamp
         )]
     pub farm: ProgramAccount<'info, FarmPool>,
     pub farm_seed: AccountInfo<'info>,

@@ -52,9 +52,9 @@ describe("02. Farm Management", () => {
           farmSeed: newFarmSeed.publicKey,
           poolLpMint: CRP_B2B_LP_MINT,
           poolRewardMint: CRP_MINT_ADDRESS,
-          poolLpToken: farmPoolLpKey,
-          poolRewardToken: farmPoolRewardKey,
-          ammSwap: AMM_PID,
+          // poolLpToken: farmPoolLpKey,
+          // poolRewardToken: farmPoolRewardKey,
+          // ammSwap: AMM_PID,
           systemProgram: SYSTEM_PROGRAM_ID,
           tokenProgram: TOKEN_PROGRAM_ID,
           rent: RENT_SYSVAR_ID
