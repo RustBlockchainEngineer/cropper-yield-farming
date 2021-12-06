@@ -1,7 +1,7 @@
 import * as anchor from '@project-serum/anchor';
 import assert from 'assert';
 import {
-  AMM_PID,
+  AMM_ID,
   B2B_MINT_ADDRESS,
   CRP_B2B_LP_MINT,
   CRP_MINT_ADDRESS,
@@ -54,7 +54,7 @@ describe("02. Farm Management", () => {
           poolRewardMint: CRP_MINT_ADDRESS,
           poolLpToken: farmPoolLpKey,
           poolRewardToken: farmPoolRewardKey,
-          // ammSwap: AMM_PID,
+          ammSwap: AMM_ID,
           systemProgram: SYSTEM_PROGRAM_ID,
           tokenProgram: TOKEN_PROGRAM_ID,
           rent: RENT_SYSVAR_ID

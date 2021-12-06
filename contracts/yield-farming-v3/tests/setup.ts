@@ -30,6 +30,8 @@ export const HARVEST_FEE_NUMERATOR = new anchor.BN(1);
 export const HARVEST_FEE_DENOMINATOR = new anchor.BN(1000);
 export const FEE_OWNER = new anchor.web3.PublicKey('7mGv8ysw45zicLWeYvt3fPRdWSxk2T7jGrXQPisn1F8v');
 export const AMM_PID = new anchor.web3.PublicKey('7ZZJNL4xD8db6yrT46SeMFZXcVr9MLepGpEtnKW2k6sW');
+export const AMM_ID = new anchor.web3.PublicKey('7y6SN26wKpLmuYMpEFbfWFAeahZ1guLSTryAzGsPHhn6');
+
 export const CRP_B2B_LP_MINT = new anchor.web3.PublicKey('GD2BRKZRFoJpue6WJX7Y4oAokX6w95mQ85v9nn6gQkdt');
 export const MINIMUM_SOL_AMOUNT = 10;
 
