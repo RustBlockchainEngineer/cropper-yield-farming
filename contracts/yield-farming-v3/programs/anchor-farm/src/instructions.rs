@@ -37,7 +37,7 @@ pub struct CreateFarm <'info>{
     #[account(
     seeds = [GLOBAL_STATE_TAG],
     bump = global_state_nonce,
-    constraint = global_state.amm_program_id == *amm_swap.owner,
+    
     )]
     pub global_state:ProgramAccount<'info, FarmProgram>,
 
