@@ -39,11 +39,16 @@ anchor.setProvider(anchor.Provider.env());
 export const program = anchor.workspace.AnchorFarm as anchor.Program<AnchorFarm>;
 export const wallet = program.provider.wallet;
 
+export const CRP_USER_ADDRESS = new anchor.web3.PublicKey('3kHk59ctGhS4FHZ3CbVGdtUEhgj6CzzTvzb74qHK2tQb');
+export const B2B_USER_ADDRESS = new anchor.web3.PublicKey('7ybGXQaRW4BPiTY8jmKBBN7jynAdZVya6Nink6wxRJk1');
+export const CRP_B2B_LP_USER = new anchor.web3.PublicKey('25MamsyJGDkJu65zyrWUdLfjqWQMgTMEjXrJAEerW7pk');
+
 export async function setupAll(){
-    
     // airdrop
     while(await program.provider.connection.getBalance(program.provider.wallet.publicKey) < MINIMUM_SOL_AMOUNT){
         await program.provider.connection.requestAirdrop(program.provider.wallet.publicKey, 5 * 1000000000);
         await program.provider.connection.requestAirdrop(program.provider.wallet.publicKey, 5 * 1000000000);
     };
+
+    //prepare amm swap, pool token
 }

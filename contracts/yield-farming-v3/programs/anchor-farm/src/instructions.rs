@@ -192,24 +192,6 @@ pub struct Deposit <'info>{
     )]
     pub user_lp_token: Account<'info, TokenAccount>,
 
-    // #[account(mut,
-    //     seeds = [FARM_POOL_REWARD_TAG, farm.key().as_ref()],
-    //     bump = farm_pool_reward_nonce,
-    // )]
-    // pub pool_reward_token: Account<'info, TokenAccount>,
-    
-    // #[account(mut,
-    //     constraint = user_reward_token.mint == farm.reward_mint_address,
-    //     constraint = user_reward_token.owner == depositor.key(),
-    // )]
-    // pub user_reward_token: Account<'info, TokenAccount>,
-
-    // #[account(mut,
-    //     constraint = fee_reward_token.mint == farm.reward_mint_address,
-    //     constraint = fee_reward_token.owner == global_state.fee_owner,
-    // )]
-    // pub fee_reward_token: Account<'info, TokenAccount>,
-
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
@@ -252,24 +234,6 @@ pub struct Withdraw <'info>{
     )]
     pub user_lp_token: Account<'info, TokenAccount>,
 
-    // #[account(mut,
-    //     seeds = [FARM_POOL_REWARD_TAG, farm.key().as_ref()],
-    //     bump = farm_pool_reward_nonce,
-    // )]
-    // pub pool_reward_token: Account<'info, TokenAccount>,
-    
-    // #[account(mut,
-    //     constraint = user_reward_token.mint == farm.reward_mint_address,
-    //     constraint = user_reward_token.owner == withdrawer.key(),
-    // )]
-    // pub user_reward_token: Account<'info, TokenAccount>,
-
-    // #[account(mut,
-    //     constraint = fee_reward_token.mint == farm.reward_mint_address,
-    //     constraint = fee_reward_token.owner == global_state.fee_owner,
-    // )]
-    // pub fee_reward_token: Account<'info, TokenAccount>,
-
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
@@ -279,9 +243,6 @@ pub struct Withdraw <'info>{
 #[derive(Accounts)]
 #[instruction(global_state_nonce: u8, farm_nonce: u8,farm_pool_lp_nonce: u8,  farm_pool_reward_nonce: u8, amount: u64)]
 pub struct AddRewardSingle <'info>{
-    #[account(
-        constraint = farm.owner == depositor.key()
-    )]
     pub depositor:  Signer<'info>,
 
     #[account(
@@ -324,9 +285,6 @@ pub struct AddRewardSingle <'info>{
 #[derive(Accounts)]
 #[instruction(global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8,  farm_pool_reward_nonce: u8, amount: u64)]
 pub struct AddRewardDual <'info>{
-    #[account(
-        constraint = depositor.key() == global_state.super_owner
-    )]
     pub depositor:  Signer<'info>,
 
     #[account(

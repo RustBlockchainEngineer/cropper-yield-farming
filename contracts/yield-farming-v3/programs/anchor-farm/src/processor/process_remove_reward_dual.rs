@@ -8,6 +8,8 @@ use crate::{
 };
 
 pub fn process_remove_reward_dual(ctx: Context<AddRewardDual>, _global_state_nonce: u8, _farm_nonce: u8, _farm_pool_lp_nonce: u8,  _farm_pool_reward_nonce: u8, _amount: u64) -> ProgramResult {
+    assert_true(ctx.accounts.global_state.super_owner == ctx.accounts.depositor.key())?;
+
     let cur_timestamp = ctx.accounts.clock.unix_timestamp as u64;
     ctx.accounts.farm.assert_dual_yield()?;
     

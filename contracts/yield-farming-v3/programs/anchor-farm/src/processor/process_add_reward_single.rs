@@ -3,9 +3,12 @@ use anchor_spl::token::{self,  Transfer};
 
 use crate::{
     instructions::*,
+    utils::*
 };
 
 pub fn process_add_reward_single(ctx: Context<AddRewardSingle>, _global_state_nonce: u8, _farm_nonce: u8, _farm_pool_lp_nonce: u8,  _farm_pool_reward_nonce: u8, _amount: u64) -> ProgramResult {
+    assert_true(ctx.accounts.farm.owner == ctx.accounts.depositor.key())?;
+    
     let cur_timestamp = ctx.accounts.clock.unix_timestamp as u64;
 
     if _amount > 0 {
