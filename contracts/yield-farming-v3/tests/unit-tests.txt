@@ -100,6 +100,7 @@ test users : 5
 -deposit lp after adding additonal single reward
 -deposit lp after adding additonal dual reward
 -deposit lp after adding additonal single & dual reward
+-deposit lp from SupplyAndStake (two txs -> one tx)
 -deposit first lp
 
 13.detailed withdraw

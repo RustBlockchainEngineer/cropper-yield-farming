@@ -37,6 +37,7 @@ pub struct CreateFarm <'info>{
     #[account(
     seeds = [GLOBAL_STATE_TAG],
     bump = global_state_nonce,
+    constraint = global_state.amm_program_id == *amm_swap.owner,
     )]
     pub global_state:ProgramAccount<'info, FarmProgram>,
 
@@ -72,9 +73,6 @@ pub struct CreateFarm <'info>{
         bump = farm_pool_reward_nonce,
         payer = creator)]
     pub pool_reward_token: Account<'info, TokenAccount>,
-    #[account(
-        constraint = *amm_swap.owner == global_state.amm_program_id
-    )]
     pub amm_swap: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
