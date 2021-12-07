@@ -10,7 +10,6 @@ use crate::{
 pub fn process_withdraw(ctx: Context<Withdraw>, _global_state_nonce: u8, _farm_nonce: u8, _farm_pool_lp_nonce: u8, _user_info_nonce: u8, _with_swap_action: u8, _amount: u64) -> ProgramResult {
     let cur_timestamp = ctx.accounts.clock.unix_timestamp as u64;
     ctx.accounts.farm.assert_allowed()?;
-    ctx.accounts.farm.assert_single_yield()?;
     assert_farm_started(cur_timestamp, ctx.accounts.farm.start_timestamp)?;
 
     let real_amount = get_real_amount_to_withdraw(ctx.accounts.user_info.deposit_balance, _with_swap_action, _amount)?;

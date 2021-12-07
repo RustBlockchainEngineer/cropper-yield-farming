@@ -8,7 +8,6 @@ use crate::{
 
 pub fn process_deposit(ctx: Context<Deposit>, _global_state_nonce: u8, _farm_nonce: u8, _farm_pool_lp_nonce: u8, _user_info_nonce: u8, _with_swap_action: u8, _amount: u64) -> ProgramResult {
     let cur_timestamp = ctx.accounts.clock.unix_timestamp as u64;
-    ctx.accounts.farm.assert_single_yield()?;
     ctx.accounts.farm.assert_allowed()?;
     assert_farm_period(cur_timestamp, ctx.accounts.farm.start_timestamp, ctx.accounts.farm.end_timestamp)?;
 
