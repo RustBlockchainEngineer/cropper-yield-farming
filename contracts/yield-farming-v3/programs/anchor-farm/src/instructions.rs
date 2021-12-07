@@ -350,14 +350,10 @@ pub struct Harvest <'info>{
     #[account(mut)]
     pub pool_reward_token: Account<'info, TokenAccount>,
     
-    #[account(mut,
-        constraint = user_reward_token.owner == harvester.key(),
-    )]
+    #[account(mut)]
     pub user_reward_token: Account<'info, TokenAccount>,
 
-    #[account(mut,
-        constraint = fee_reward_token.owner == global_state.fee_owner,
-    )]
+    #[account(mut)]
     pub fee_reward_token: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,

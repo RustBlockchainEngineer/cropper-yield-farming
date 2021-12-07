@@ -11,7 +11,9 @@ use crate::{
 pub fn process_harvest(ctx: Context<Harvest>, _global_state_nonce: u8, _farm_nonce: u8, _user_info_nonce: u8, _reward_type: u8) -> ProgramResult {
     let cur_timestamp = ctx.accounts.clock.unix_timestamp as u64;
     let mut tag = FARM_POOL_REWARD_TAG;
-
+    user_reward_token.owner == harvester.key()
+    assert_true(ctx.accounts.user_reward_token.owner == ctx.accounts.harvester.key())?;
+    assert_true(ctx.accounts.fee_reward_token.owner == ctx.accounts.global_state.fee_owner)?;
     if RewardType::is_single(_reward_type) {
         assert_true(ctx.accounts.user_reward_token.mint == ctx.accounts.farm.reward_mint_address)?;
         assert_true(ctx.accounts.fee_reward_token.mint == ctx.accounts.farm.reward_mint_address)?;
