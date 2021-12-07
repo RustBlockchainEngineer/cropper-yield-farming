@@ -39,11 +39,11 @@ pub mod anchor_farm {
     pub fn extend_dual(ctx: Context<ExtendDual>, farm_nonce: u8, end_timestamp: u64) -> ProgramResult { 
         process_extend_dual(ctx, farm_nonce, end_timestamp) 
     }
-    pub fn deposit(ctx: Context<Deposit>, global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8, farm_pool_reward_nonce: u8, user_info_nonce: u8, with_swap_action: u8, amount: u64) -> ProgramResult { 
-        process_deposit(ctx, global_state_nonce, farm_nonce, farm_pool_lp_nonce, farm_pool_reward_nonce, user_info_nonce, with_swap_action, amount) 
+    pub fn deposit(ctx: Context<Deposit>, global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8,  user_info_nonce: u8, with_swap_action: u8, amount: u64) -> ProgramResult { 
+        process_deposit(ctx, global_state_nonce, farm_nonce, farm_pool_lp_nonce, user_info_nonce, with_swap_action, amount) 
     }
-    pub fn withdraw(ctx: Context<Withdraw>, global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8, farm_pool_reward_nonce: u8, dual_pool_reward_nonce: u8, user_info_nonce: u8, with_swap_action: u8, amount: u64) -> ProgramResult { 
-        process_withdraw(ctx, global_state_nonce, farm_nonce, farm_pool_lp_nonce, farm_pool_reward_nonce, dual_pool_reward_nonce, user_info_nonce, with_swap_action, amount) 
+    pub fn withdraw(ctx: Context<Withdraw>, global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8, user_info_nonce: u8, with_swap_action: u8, amount: u64) -> ProgramResult { 
+        process_withdraw(ctx, global_state_nonce, farm_nonce, farm_pool_lp_nonce, user_info_nonce, with_swap_action, amount) 
     }
     pub fn add_reward_single(ctx: Context<AddRewardSingle>, global_state_nonce: u8, farm_nonce: u8,farm_pool_lp_nonce: u8,   farm_pool_reward_nonce: u8, amount: u64) -> ProgramResult { 
         process_add_reward_single(ctx, global_state_nonce, farm_nonce,farm_pool_lp_nonce,   farm_pool_reward_nonce, amount) 

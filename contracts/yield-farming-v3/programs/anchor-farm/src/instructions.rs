@@ -155,7 +155,7 @@ pub struct ExtendDual<'info>{
 }
 
 #[derive(Accounts)]
-#[instruction(global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8, farm_pool_reward_nonce: u8, user_info_nonce: u8, with_swap_action: u8, amount: u64)]
+#[instruction(global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8, user_info_nonce: u8, with_swap_action: u8, amount: u64)]
 pub struct Deposit <'info>{
     pub depositor:  Signer<'info>,
 
@@ -199,7 +199,7 @@ pub struct Deposit <'info>{
 }
 
 #[derive(Accounts)]
-#[instruction(global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8, farm_pool_reward_nonce: u8, dual_pool_reward_nonce: u8, user_info_nonce: u8, with_swap_action: u8, amount: u64)]
+#[instruction(global_state_nonce: u8, farm_nonce: u8, farm_pool_lp_nonce: u8, user_info_nonce: u8, with_swap_action: u8, amount: u64)]
 pub struct Withdraw <'info>{
     pub withdrawer:  Signer<'info>,
 

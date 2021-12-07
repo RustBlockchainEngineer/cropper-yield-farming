@@ -6,6 +6,7 @@ import {
   B2B_USER_ADDRESS,
   CLOCK_SYSVAR_ID,
   CRP_B2B_LP_MINT,
+  CRP_B2B_LP_USER,
   CRP_MINT_ADDRESS,
   CRP_USER_ADDRESS,
   DUAL_POOL_REWARD_TAG,
@@ -18,6 +19,7 @@ import {
   setupAll,
   SYSTEM_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  USER_INFO_TAG,
   wallet,
 } from "./setup";
 
@@ -32,7 +34,7 @@ describe("02. Farm Management", () => {
   const newEndTime = startTime + 1000;
   const newDualEndTime = dualStartTime + 400;
 
-  it("create new farm", async () => {
+  it("02 - create new farm", async () => {
     await setupAll();
     const newFarmSeed = anchor.web3.Keypair.generate();
     [globalStateKey, globalStateKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(GLOBAL_STATE_TAG)], program.programId);
@@ -68,7 +70,7 @@ describe("02. Farm Management", () => {
 
     await program.account.farmPool.fetch(farmKey);
   });
-  it("extend old farm", async () => {
+  it("02 - extend old farm", async () => {
     await setupAll();
     const oldFarm = await program.account.farmPool.fetch(farmKey);
     const tx = await program.rpc.extendFarm(
@@ -85,7 +87,7 @@ describe("02. Farm Management", () => {
     const newFarm = await program.account.farmPool.fetch(farmKey);
     assert(newFarm.endTimestamp.toNumber() - newFarm.startTimestamp.toNumber() === newEndTime - startTime);
   });
-  it("create dual", async () => {
+  it("02 - create dual", async () => {
     await setupAll();
     const oldFarm = await program.account.farmPool.fetch(farmKey);
     [farmKey, farmKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(FARM_TAG), oldFarm.seedKey.toBuffer()], program.programId);
@@ -116,7 +118,7 @@ describe("02. Farm Management", () => {
     const dualFarm = await program.account.farmPool.fetch(farmKey);
     assert(dualFarm.poolRewardTokenAccountDual.toBase58() === farmPoolRewardDualKey.toBase58());
   });
-  it("extend dual farm", async () => {
+  it("02 - extend dual farm", async () => {
     await setupAll();
     const oldFarm = await program.account.farmPool.fetch(farmKey);
     const tx = await program.rpc.extendDual(
@@ -134,7 +136,7 @@ describe("02. Farm Management", () => {
     assert(newFarm.endTimestampDual.toNumber() - newFarm.startTimestampDual.toNumber() === newDualEndTime - dualStartTime);
   });
   const singleRewardAmount = new anchor.BN(100 * 1000000) ;
-  it("add single reward", async () => {
+  it("03 - add single reward", async () => {
     await setupAll();
     const [farmPoolLpKey, farmPoolLpKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(FARM_POOL_LP_TAG), farmKey.toBuffer()], program.programId);
     const [farmPoolRewardKey, farmPoolRewardKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(FARM_POOL_REWARD_TAG), farmKey.toBuffer()], program.programId);
@@ -168,7 +170,7 @@ describe("02. Farm Management", () => {
   });
   const dualRewardAmount = new anchor.BN(100 * 1000000000) ;
   const dualRemoveRewardAmount = new anchor.BN(30 * 1000000000) ;
-  it("add dual reward", async () => {
+  it("03 - add dual reward", async () => {
     await setupAll();
     const [farmPoolLpKey, farmPoolLpKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(FARM_POOL_LP_TAG), farmKey.toBuffer()], program.programId);
     const [farmPoolRewardKey, farmPoolRewardKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(DUAL_POOL_REWARD_TAG), farmKey.toBuffer()], program.programId);
@@ -199,7 +201,7 @@ describe("02. Farm Management", () => {
     const newFarm = await program.account.farmPool.fetch(farmKey);
     assert(newFarm.currentRewardsDual.toNumber() === dualRewardAmount.toNumber());
   });
-  it("remove dual reward", async () => {
+  it("03 - remove dual reward", async () => {
     await setupAll();
     const [farmPoolLpKey, farmPoolLpKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(FARM_POOL_LP_TAG), farmKey.toBuffer()], program.programId);
     const [farmPoolRewardKey, farmPoolRewardKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(DUAL_POOL_REWARD_TAG), farmKey.toBuffer()], program.programId);
@@ -229,5 +231,73 @@ describe("02. Farm Management", () => {
     );
     const newFarm = await program.account.farmPool.fetch(farmKey);
     assert(newFarm.currentRewardsDual.toNumber() === dualRewardAmount.toNumber() - dualRemoveRewardAmount.toNumber());
+  });
+  const depositAmount = new anchor.BN(10 * 100000000);
+  it("04 - deposit lp", async () => {
+    await setupAll();
+    const [farmPoolLpKey, farmPoolLpKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(FARM_POOL_LP_TAG), farmKey.toBuffer()], program.programId);
+    const [userInfoKey, userInfoKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(USER_INFO_TAG), farmKey.toBuffer(), wallet.publicKey.toBuffer()], program.programId);
+    const withSwapAction = 0;
+    const oldFarm = await program.account.farmPool.fetch(farmKey);
+    const tx = await program.rpc.deposit(
+      globalStateKeyNonce,
+      farmKeyNonce,
+      farmPoolLpKeyNonce,
+      userInfoKeyNonce,
+      withSwapAction,
+      depositAmount,
+      {
+        accounts: {
+          depositor: wallet.publicKey,
+          globalState: globalStateKey,
+          farm: farmKey,
+          farmSeed: oldFarm.seedKey,
+          userInfo: userInfoKey,
+          poolLpToken: farmPoolLpKey,
+          userLpToken: CRP_B2B_LP_USER,
+          systemProgram: SYSTEM_PROGRAM_ID,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rent: RENT_SYSVAR_ID,
+          clock: CLOCK_SYSVAR_ID
+        }
+      }
+    );
+    const newFarm = await program.account.farmPool.fetch(farmKey);
+    console.log('new farm', newFarm);
+    assert(newFarm.poolLpBalance.toNumber() === depositAmount.toNumber() + oldFarm.poolLpBalance.toNumber());
+  });
+  const withdrawAmount = new anchor.BN(10 * 100000000);
+  it("04 - withdraw lp", async () => {
+    await setupAll();
+    const [farmPoolLpKey, farmPoolLpKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(FARM_POOL_LP_TAG), farmKey.toBuffer()], program.programId);
+    const [userInfoKey, userInfoKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(USER_INFO_TAG), farmKey.toBuffer(), wallet.publicKey.toBuffer()], program.programId);
+    const withSwapAction = 0;
+    const oldFarm = await program.account.farmPool.fetch(farmKey);
+    const tx = await program.rpc.withdraw(
+      globalStateKeyNonce,
+      farmKeyNonce,
+      farmPoolLpKeyNonce,
+      userInfoKeyNonce,
+      withSwapAction,
+      withdrawAmount,
+      {
+        accounts: {
+          withdrawer: wallet.publicKey,
+          globalState: globalStateKey,
+          farm: farmKey,
+          farmSeed: oldFarm.seedKey,
+          userInfo: userInfoKey,
+          poolLpToken: farmPoolLpKey,
+          userLpToken: CRP_B2B_LP_USER,
+          systemProgram: SYSTEM_PROGRAM_ID,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rent: RENT_SYSVAR_ID,
+          clock: CLOCK_SYSVAR_ID
+        }
+      }
+    );
+    const newFarm = await program.account.farmPool.fetch(farmKey);
+    console.log('new farm', newFarm);
+    assert(newFarm.poolLpBalance.toNumber() === oldFarm.poolLpBalance.toNumber() - withdrawAmount.toNumber());
   });
 });

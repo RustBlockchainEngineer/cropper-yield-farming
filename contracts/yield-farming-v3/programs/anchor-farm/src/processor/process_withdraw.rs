@@ -7,7 +7,7 @@ use crate::{
     constant::*
 };
 
-pub fn process_withdraw(ctx: Context<Withdraw>, _global_state_nonce: u8, _farm_nonce: u8, _farm_pool_lp_nonce: u8, _farm_pool_reward_nonce: u8, _dual_pool_reward_nonce: u8, _user_info_nonce: u8, _with_swap_action: u8, _amount: u64) -> ProgramResult {
+pub fn process_withdraw(ctx: Context<Withdraw>, _global_state_nonce: u8, _farm_nonce: u8, _farm_pool_lp_nonce: u8, _user_info_nonce: u8, _with_swap_action: u8, _amount: u64) -> ProgramResult {
     let cur_timestamp = ctx.accounts.clock.unix_timestamp as u64;
     ctx.accounts.farm.assert_allowed()?;
     ctx.accounts.farm.assert_single_yield()?;

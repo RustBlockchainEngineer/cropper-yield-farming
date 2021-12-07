@@ -16,7 +16,7 @@ import {
 describe("01. Manage global state", () => {
   let globalStateKey = null, globalStateKeyNonce = 0;
 
-  it("Create global state", async () => {
+  it("01 - Create global state", async () => {
     await setupAll();
     [globalStateKey, globalStateKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(GLOBAL_STATE_TAG)], program.programId);
     
@@ -40,7 +40,7 @@ describe("01. Manage global state", () => {
     await program.account.farmProgram.fetch(globalStateKey);
   });
 
-  it("Update global state", async () => {
+  it("01 - Update global state", async () => {
     await setupAll();
     
     const tx = await program.rpc.createGlobalState(
