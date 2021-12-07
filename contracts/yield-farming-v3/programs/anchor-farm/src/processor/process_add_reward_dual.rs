@@ -23,6 +23,6 @@ pub fn process_add_reward_dual(ctx: Context<AddRewardDual>, _global_state_nonce:
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         token::transfer(cpi_ctx, _amount)?;
     }
-    ctx.accounts.farm.current_rewards_dual = ctx.accounts.pool_reward_token_dual.amount;
+    ctx.accounts.farm.current_rewards_dual += _amount;
     Ok(())
 }

@@ -64,7 +64,7 @@ describe("02. Farm Management", () => {
         }
       }
     );
-    console.log('txid=',tx);
+    //console.log('txid=',tx);
 
     await program.account.farmPool.fetch(farmKey);
   });
@@ -163,6 +163,7 @@ describe("02. Farm Management", () => {
       }
     );
     const newFarm = await program.account.farmPool.fetch(farmKey);
+    console.log('new farm', newFarm);
     assert(newFarm.currentRewards.toNumber() === singleRewardAmount.toNumber());
   });
   const dualRewardAmount = new anchor.BN(100 * 1000000000) ;

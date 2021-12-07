@@ -24,7 +24,7 @@ pub fn process_add_reward_single(ctx: Context<AddRewardSingle>, _global_state_no
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         token::transfer(cpi_ctx, _amount)?;
     }
-    ctx.accounts.farm.current_rewards = ctx.accounts.pool_reward_token.amount;
+    ctx.accounts.farm.current_rewards += _amount;
     
     Ok(())
 }

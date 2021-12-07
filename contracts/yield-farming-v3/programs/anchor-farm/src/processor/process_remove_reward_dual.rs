@@ -38,7 +38,7 @@ pub fn process_remove_reward_dual(ctx: Context<AddRewardDual>, _global_state_non
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
         token::transfer(cpi_ctx, removal_amount)?;
         
-        ctx.accounts.farm.current_rewards_dual = ctx.accounts.pool_reward_token_dual.amount;
+        ctx.accounts.farm.current_rewards_dual -= removal_amount;
     }
     Ok(())
 }
