@@ -165,7 +165,7 @@ describe("02. Farm Management", () => {
       }
     );
     const newFarm = await program.account.farmPool.fetch(farmKey);
-    console.log('new farm', newFarm);
+    
     assert(newFarm.currentRewards.toNumber() === singleRewardAmount.toNumber());
   });
   const dualRewardAmount = new anchor.BN(100 * 1000000000) ;
@@ -263,9 +263,69 @@ describe("02. Farm Management", () => {
       }
     );
     const newFarm = await program.account.farmPool.fetch(farmKey);
-    console.log('new farm', newFarm);
+    
     assert(newFarm.poolLpBalance.toNumber() === depositAmount.toNumber() + oldFarm.poolLpBalance.toNumber());
   });
+
+  it("04 - harvest single reward", async () => {
+    await setupAll();
+    const [farmPoolRewardKey] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(FARM_POOL_REWARD_TAG), farmKey.toBuffer()], program.programId);
+    const [userInfoKey, userInfoKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(USER_INFO_TAG), farmKey.toBuffer(), wallet.publicKey.toBuffer()], program.programId);
+    const rewardType = 0;
+    const oldFarm = await program.account.farmPool.fetch(farmKey);
+    const tx = await program.rpc.harvest(
+      globalStateKeyNonce,
+      farmKeyNonce,
+      userInfoKeyNonce,
+      rewardType,
+      {
+        accounts: {
+          harvester: wallet.publicKey,
+          globalState: globalStateKey,
+          farm: farmKey,
+          farmSeed: oldFarm.seedKey,
+          userInfo: userInfoKey,
+          poolRewardToken: farmPoolRewardKey,
+          userRewardToken: CRP_USER_ADDRESS,
+          feeRewardToken: CRP_USER_ADDRESS,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          clock: CLOCK_SYSVAR_ID
+        }
+      }
+    );
+    const newFarm = await program.account.farmPool.fetch(farmKey);
+    assert(newFarm.harvestedRewards.toNumber() > oldFarm.harvestedRewards.toNumber());
+  });
+  it("04 - harvest dual reward", async () => {
+    await setupAll();
+    const [farmPoolRewardKey] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(DUAL_POOL_REWARD_TAG), farmKey.toBuffer()], program.programId);
+    const [userInfoKey, userInfoKeyNonce] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(USER_INFO_TAG), farmKey.toBuffer(), wallet.publicKey.toBuffer()], program.programId);
+    const rewardType = 1;
+    const oldFarm = await program.account.farmPool.fetch(farmKey);
+    const tx = await program.rpc.harvest(
+      globalStateKeyNonce,
+      farmKeyNonce,
+      userInfoKeyNonce,
+      rewardType,
+      {
+        accounts: {
+          harvester: wallet.publicKey,
+          globalState: globalStateKey,
+          farm: farmKey,
+          farmSeed: oldFarm.seedKey,
+          userInfo: userInfoKey,
+          poolRewardToken: farmPoolRewardKey,
+          userRewardToken: B2B_USER_ADDRESS,
+          feeRewardToken: B2B_USER_ADDRESS,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          clock: CLOCK_SYSVAR_ID
+        }
+      }
+    );
+    const newFarm = await program.account.farmPool.fetch(farmKey);
+    assert(newFarm.harvestedRewardsDual.toNumber() > oldFarm.harvestedRewardsDual.toNumber());
+  });
+
   const withdrawAmount = new anchor.BN(10 * 100000000);
   it("04 - withdraw lp", async () => {
     await setupAll();
@@ -297,7 +357,7 @@ describe("02. Farm Management", () => {
       }
     );
     const newFarm = await program.account.farmPool.fetch(farmKey);
-    console.log('new farm', newFarm);
+    
     assert(newFarm.poolLpBalance.toNumber() === oldFarm.poolLpBalance.toNumber() - withdrawAmount.toNumber());
   });
 });
