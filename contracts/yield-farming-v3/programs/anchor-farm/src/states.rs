@@ -159,7 +159,9 @@ impl FarmPool {
         Ok(result.to_u64()?)
     }
     pub fn pending_rewards_dual(&self, user_info:&mut UserInfo) -> Result<u64> {
-        self.assert_dual_yield()?;
+        if self.get_state() != FarmState::DualYield {
+            return Ok(0);
+        }
 
         let deposit_balance = user_info.deposit_balance.to_precise()?;
         let reward_per_share_net = self.reward_per_share_net_dual.to_precise()?;
@@ -176,6 +178,10 @@ impl FarmPool {
     }
     /// get total reward amount for a user so far
     pub fn get_new_reward_debt_dual(&self, user_info:&UserInfo) -> Result<u64>{
+        if self.get_state() != FarmState::DualYield {
+            return Ok(0);
+        }
+        
         let deposit_balance = user_info.deposit_balance.to_precise()?;
         let reward_per_share_net = self.reward_per_share_net_dual.to_precise()?;
         let reward_multipler = REWARD_MULTIPLER.to_precise()?;
@@ -255,7 +261,9 @@ impl FarmPool {
         Ok(())
     }
     pub fn update_share_dual(&mut self, cur_timestamp: u64, param_lp_balance: u64, param_reward_balance: u64) -> ProgramResult{
-        self.assert_dual_yield()?;
+        if self.get_state() != FarmState::DualYield {
+            return Ok(());
+        }
 
         let mut _calc_timestamp = cur_timestamp;
         let end_timestamp = self.end_timestamp_dual;
@@ -355,6 +363,8 @@ impl FarmPool {
             let pending_dual = self.pending_rewards_dual(user_info)?;
             user_info.pending_rewards += pending;
             user_info.pending_rewards_dual += pending_dual;
+            user_info.reward_debt = self.get_new_reward_debt(user_info)?;
+            user_info.reward_debt_dual = self.get_new_reward_debt_dual(user_info)?;
         }
         Ok(())
     }

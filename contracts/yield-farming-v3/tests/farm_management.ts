@@ -231,6 +231,8 @@ describe("02. Farm Management", () => {
     );
     const newFarm = await program.account.farmPool.fetch(farmKey);
     assert(newFarm.currentRewardsDual.toNumber() === dualRewardAmount.toNumber() - dualRemoveRewardAmount.toNumber());
+    console.log("harvested rewards", newFarm.harvestedRewards.toNumber());
+    console.log("distributed rewards", newFarm.distributedRewards.toNumber());
   });
   const depositAmount = new anchor.BN(10 * 100000000);
   it("04 - deposit lp", async () => {
@@ -265,6 +267,10 @@ describe("02. Farm Management", () => {
     const newFarm = await program.account.farmPool.fetch(farmKey);
     
     assert(newFarm.poolLpBalance.toNumber() === depositAmount.toNumber() + oldFarm.poolLpBalance.toNumber());
+    console.log("harvested rewards", newFarm.harvestedRewards.toNumber());
+    console.log("distributed rewards", newFarm.distributedRewards.toNumber());
+    console.log("harvested rewards dual", newFarm.harvestedRewardsDual.toNumber());
+    console.log("distributed rewards dual", newFarm.distributedRewardsDual.toNumber());
   });
 
   it("04 - harvest single reward", async () => {
@@ -295,6 +301,10 @@ describe("02. Farm Management", () => {
     );
     const newFarm = await program.account.farmPool.fetch(farmKey);
     assert(newFarm.harvestedRewards.toNumber() > oldFarm.harvestedRewards.toNumber());
+    console.log("harvested rewards", newFarm.harvestedRewards.toNumber());
+    console.log("distributed rewards", newFarm.distributedRewards.toNumber());
+    console.log("harvested rewards dual", newFarm.harvestedRewardsDual.toNumber());
+    console.log("distributed rewards dual", newFarm.distributedRewardsDual.toNumber());
   });
   it("04 - harvest dual reward", async () => {
     await setupAll();
@@ -324,6 +334,10 @@ describe("02. Farm Management", () => {
     );
     const newFarm = await program.account.farmPool.fetch(farmKey);
     assert(newFarm.harvestedRewardsDual.toNumber() > oldFarm.harvestedRewardsDual.toNumber());
+    console.log("harvested rewards", newFarm.harvestedRewards.toNumber());
+    console.log("distributed rewards", newFarm.distributedRewards.toNumber());
+    console.log("harvested rewards dual", newFarm.harvestedRewardsDual.toNumber());
+    console.log("distributed rewards dual", newFarm.distributedRewardsDual.toNumber());
   });
 
   const withdrawAmount = new anchor.BN(10 * 100000000);
@@ -359,5 +373,9 @@ describe("02. Farm Management", () => {
     const newFarm = await program.account.farmPool.fetch(farmKey);
     
     assert(newFarm.poolLpBalance.toNumber() === oldFarm.poolLpBalance.toNumber() - withdrawAmount.toNumber());
+    console.log("harvested rewards", newFarm.harvestedRewards.toNumber());
+    console.log("distributed rewards", newFarm.distributedRewards.toNumber());
+    console.log("harvested rewards dual", newFarm.harvestedRewardsDual.toNumber());
+    console.log("distributed rewards dual", newFarm.distributedRewardsDual.toNumber());
   });
 });

@@ -52,7 +52,7 @@ describe("01. Manage global state", () => {
           superOwner: wallet.publicKey,
           globalState: globalStateKey,
           newSuperOwner: wallet.publicKey,
-          feeOwner: FEE_OWNER,
+          feeOwner: wallet.publicKey,
           allowedCreator: wallet.publicKey,
           ammProgramId: AMM_PID,
           systemProgram: SYSTEM_PROGRAM_ID,
