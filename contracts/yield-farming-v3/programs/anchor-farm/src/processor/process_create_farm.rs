@@ -23,6 +23,7 @@ pub fn process_create_farm(ctx: Context<CreateFarm>, _global_state_nonce:u8, _fa
     ctx.accounts.new_farm.seed_key = *ctx.accounts.farm_seed.key;
     ctx.accounts.new_farm.pool_lp_token_account = ctx.accounts.pool_lp_token.key();
     ctx.accounts.new_farm.pool_reward_token_account = ctx.accounts.pool_reward_token.key();
+    ctx.accounts.new_farm.reward_mint_address = ctx.accounts.pool_reward_mint.key();
     ctx.accounts.new_farm.pool_mint_address = ctx.accounts.pool_lp_mint.key();
     ctx.accounts.new_farm.pool_lp_balance = 0;
     ctx.accounts.new_farm.reward_per_share_net = 0;
