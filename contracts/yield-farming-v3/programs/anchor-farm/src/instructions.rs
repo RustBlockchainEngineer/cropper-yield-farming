@@ -248,8 +248,6 @@ pub struct AddRewardSingle <'info>{
     #[account(
         seeds = [GLOBAL_STATE_TAG],
         bump = global_state_nonce,
-        constraint = user_reward_token.mint == farm.reward_mint_address,
-        constraint = user_reward_token.owner == depositor.key(),
     )]
     pub global_state:ProgramAccount<'info, FarmProgram>,
     
@@ -272,7 +270,6 @@ pub struct AddRewardSingle <'info>{
         bump = farm_pool_reward_nonce,
     )]
     pub pool_reward_token: Account<'info, TokenAccount>,
-    
     
     #[account(mut)]
     pub user_reward_token: Account<'info, TokenAccount>,
