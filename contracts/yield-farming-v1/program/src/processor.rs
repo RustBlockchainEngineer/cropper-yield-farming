@@ -622,6 +622,10 @@ impl Processor {
             return Err(FarmError::InvalidProgramAddress.into());
         }
 
+        if user_info.deposit_balance == 0 && amount == 0 {
+            return Err(FarmError::NotEnoughBalance.into());
+        }
+
         msg!("updating pool ... ");
 
         //update this pool with up-to-date, distribute reward token 
@@ -879,7 +883,6 @@ impl Processor {
                 &farm_pool, 
                 &mut user_info
             )?;
-            
         }
 
         // unstake lp token
