@@ -346,14 +346,22 @@ pub struct Harvest <'info>{
         bump = user_info_nonce,
         )]
     pub user_info: ProgramAccount<'info, UserInfo>,
+
+    pub reward_mint: Account<'info, Mint>,
     
     #[account(mut)]
     pub pool_reward_token: Account<'info, TokenAccount>,
     
-    #[account(mut)]
+    #[account(init_if_needed,
+        token::mint = reward_mint,
+        token::authority = farm,
+        payer = harvester)]
     pub user_reward_token: Account<'info, TokenAccount>,
 
-    #[account(mut)]
+    #[account(init_if_needed,
+        token::mint = reward_mint,
+        token::authority = farm,
+        payer = harvester)]
     pub fee_reward_token: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
