@@ -364,6 +364,8 @@ pub struct Harvest <'info>{
         payer = harvester)]
     pub fee_reward_token: Account<'info, TokenAccount>,
 
+    pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
     pub clock: Sysvar<'info, Clock>,
 }
