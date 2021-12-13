@@ -130,9 +130,6 @@ pub fn assert_farm_started(cur_timestamp: u64, start_timestamp: u64) -> ProgramR
     Ok(())
 }
 pub fn get_real_amount_to_deposit(user_wallet_amount: u64, with_swap_action: u8, amount: u64) -> Result<u64> {
-    if user_wallet_amount < amount {
-        return Err(FarmError::NotEnoughBalance.into());
-    }
     let mut result = amount;
     if with_swap_action > 0 {
         result = user_wallet_amount - amount;
