@@ -37,7 +37,5 @@ pub fn process_deposit(ctx: Context<Deposit>, _global_state_nonce: u8, _farm_non
         ctx.accounts.user_info.deposit_balance += real_amount;
         ctx.accounts.farm.pool_lp_balance += real_amount;
     }
-    ctx.accounts.user_info.reward_debt = ctx.accounts.farm.get_new_reward_debt(&ctx.accounts.user_info)?;
-    ctx.accounts.user_info.reward_debt_dual = ctx.accounts.farm.get_new_reward_debt_dual(&ctx.accounts.user_info)?;
     Ok(())
 }

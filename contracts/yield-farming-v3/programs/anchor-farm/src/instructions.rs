@@ -216,7 +216,7 @@ pub struct Withdraw <'info>{
     pub farm: ProgramAccount<'info, FarmPool>, 
     pub farm_seed: AccountInfo<'info>,
 
-    #[account(
+    #[account(mut,
         seeds = [USER_INFO_TAG, farm.key().as_ref(), withdrawer.key().as_ref()],
         bump = user_info_nonce,
         )]
@@ -347,21 +347,12 @@ pub struct Harvest <'info>{
         )]
     pub user_info: ProgramAccount<'info, UserInfo>,
 
-    pub reward_mint: Account<'info, Mint>,
-    
     #[account(mut)]
     pub pool_reward_token: Account<'info, TokenAccount>,
     
-    #[account(init_if_needed,
-        token::mint = reward_mint,
-        token::authority = farm,
-        payer = harvester)]
+    #[account(mut)]
     pub user_reward_token: Account<'info, TokenAccount>,
-
-    #[account(init_if_needed,
-        token::mint = reward_mint,
-        token::authority = farm,
-        payer = harvester)]
+    #[account(mut)]
     pub fee_reward_token: Account<'info, TokenAccount>,
 
     pub system_program: Program<'info, System>,

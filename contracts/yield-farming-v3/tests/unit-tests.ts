@@ -335,7 +335,9 @@ describe("04. farming operations", () => {
           poolRewardToken: farmPoolRewardKey,
           userRewardToken: CRP_USER_ADDRESS,
           feeRewardToken: CRP_USER_ADDRESS,
+          systemProgram: SYSTEM_PROGRAM_ID,
           tokenProgram: TOKEN_PROGRAM_ID,
+          rent: RENT_SYSVAR_ID,
           clock: CLOCK_SYSVAR_ID
         }
       }
@@ -363,7 +365,9 @@ describe("04. farming operations", () => {
           poolRewardToken: farmPoolRewardKey,
           userRewardToken: B2B_USER_ADDRESS,
           feeRewardToken: B2B_USER_ADDRESS,
+          systemProgram: SYSTEM_PROGRAM_ID,
           tokenProgram: TOKEN_PROGRAM_ID,
+          rent: RENT_SYSVAR_ID,
           clock: CLOCK_SYSVAR_ID
         }
       }
