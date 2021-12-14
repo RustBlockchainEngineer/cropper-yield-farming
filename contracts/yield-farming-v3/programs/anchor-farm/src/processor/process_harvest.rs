@@ -40,7 +40,6 @@ pub fn process_harvest(ctx: Context<Harvest>, _global_state_nonce: u8, _farm_non
         &mut ctx.accounts.farm, 
         RewardType::is_dual(_reward_type)
     )?;
-    ctx.accounts.farm.update_debt(&mut ctx.accounts.user_info)?;
     Ok(())
 }
 

@@ -230,6 +230,8 @@ impl FarmPool {
         
         if self.distributed_rewards < self.harvested_rewards {
             msg!("Error: self.distributed_rewards < self.harvested_rewards");
+            msg!("self.distributed_rewards = {}", self.distributed_rewards);
+            msg!("self.harvested_rewards = {}", self.harvested_rewards);
             return Err(FarmError::RewardOverflow.into());
         }
         if param_reward_balance < self.distributed_rewards - self.harvested_rewards {
