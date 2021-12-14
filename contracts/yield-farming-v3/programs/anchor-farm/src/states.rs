@@ -124,17 +124,16 @@ pub struct FarmPool {
 impl FarmPool {
     pub fn pending_rewards(&self, user_info:&UserInfo) -> Result<u64> {
         let deposit_balance = user_info.deposit_balance.to_precise()?;
-        msg!("pending_rewards: deposit_balance = {}", deposit_balance.to_u64()?);
         let reward_per_share_net = self.reward_per_share_net.to_precise()?;
-        msg!("pending_rewards: reward_per_share_net = {}", reward_per_share_net.to_u64()?);
         let reward_multipler = REWARD_MULTIPLER.to_precise()?;
         let reward_debt = user_info.reward_debt.to_precise()?;
-        msg!("pending_rewards: reward_debt = {}", reward_debt.to_u64()?);
 
         let mut pending = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
-        msg!("pending_rewards: pending = {}", pending.to_u64()?);
-
+        if pending.to_imprecise().ok_or(FarmError::PreciseError)? < reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? {
+            msg!("pending < reward_debt");
+            return Ok(0);
+        }
         if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 {
             pending = pending.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
         }
@@ -175,7 +174,10 @@ impl FarmPool {
 
         let mut pending = deposit_balance.checked_mul(&reward_per_share_net).ok_or(FarmError::PreciseError)?
                     .checked_div(&reward_multipler).ok_or(FarmError::PreciseError)?;
-
+        if pending.to_imprecise().ok_or(FarmError::PreciseError)? < reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? {
+            msg!("pending_dual < reward_debt_dual");
+            return Ok(0);
+        }
         if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 {
             pending = pending.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
         }
