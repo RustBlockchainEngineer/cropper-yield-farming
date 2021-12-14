@@ -8,8 +8,11 @@ use crate::{
 };
 
 pub fn process_create_dual(ctx: Context<CreateDual>, _global_state_nonce:u8, _farm_nonce: u8, _farm_pool_reward_dual_nonce: u8, _start_timestamp: u64, _end_timestamp: u64) -> ProgramResult {
+    
     ctx.accounts.farm.assert_allowed()?;
+    msg!("dual 1");
     assert_true(ctx.accounts.creator.key() == ctx.accounts.global_state.super_owner)?;
+    msg!("dual 2");
 
     ctx.accounts.farm.set_state(FarmState::DualYield);
     ctx.accounts.farm.reward_mint_address_dual = ctx.accounts.pool_reward_mint_dual.key();
