@@ -368,9 +368,12 @@ impl FarmPool {
             let pending_dual = self.pending_rewards_dual(user_info)?;
             user_info.pending_rewards += pending;
             user_info.pending_rewards_dual += pending_dual;
-            user_info.reward_debt = self.get_new_reward_debt(user_info)?;
-            user_info.reward_debt_dual = self.get_new_reward_debt_dual(user_info)?;
         }
+        Ok(())
+    }
+    pub fn update_debt<'info>(&mut self, user_info:&mut ProgramAccount<'info, UserInfo>) -> ProgramResult {
+        user_info.reward_debt = self.get_new_reward_debt(user_info)?;
+        user_info.reward_debt_dual = self.get_new_reward_debt_dual(user_info)?;
         Ok(())
     }
     
