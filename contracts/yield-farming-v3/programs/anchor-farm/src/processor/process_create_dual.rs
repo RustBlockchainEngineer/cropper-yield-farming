@@ -3,7 +3,8 @@ use anchor_lang::prelude::*;
 use crate::{
     instructions::*,
     error::*,
-    states::*
+    states::*,
+    utils:*
 };
 
 pub fn process_create_dual(ctx: Context<CreateDual>, _global_state_nonce:u8, _farm_nonce: u8, _farm_pool_reward_dual_nonce: u8, _start_timestamp: u64, _end_timestamp: u64) -> ProgramResult {
