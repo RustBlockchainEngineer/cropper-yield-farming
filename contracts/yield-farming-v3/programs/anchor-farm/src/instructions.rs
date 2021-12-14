@@ -83,9 +83,6 @@ pub struct CreateFarm <'info>{
 #[derive(Accounts)]
 #[instruction(global_state_nonce:u8, farm_nonce: u8, farm_pool_reward_dual_nonce: u8, start_timestamp: u64, end_timestamp: u64)]
 pub struct CreateDual <'info>{
-    #[account(
-        constraint = global_state.super_owner == creator.key()
-    )]
     pub creator:  Signer<'info>,
 
     #[account(
