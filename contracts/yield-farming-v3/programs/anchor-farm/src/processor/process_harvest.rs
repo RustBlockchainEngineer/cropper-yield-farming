@@ -91,11 +91,17 @@ pub fn harvest<'info>(
         token::transfer(cpi_ctx_user, user_pending)?;
 
         if is_dual {
+            if farm.distributed_rewards_dual < farm.harvested_rewards_dual + pending {
+                pending = farm.distributed_rewards_dual - farm.harvested_rewards_dual;
+            }
             farm.harvested_rewards_dual += pending;
             user_info.pending_rewards_dual = 0;
             user_info.reward_debt_dual = farm.get_new_reward_debt_dual(user_info)?;
         }
         else {
+            if farm.distributed_rewards < farm.harvested_rewards + pending {
+                pending = farm.distributed_rewards - farm.harvested_rewards;
+            }
             farm.harvested_rewards += pending;
             user_info.pending_rewards = 0;
             user_info.reward_debt = farm.get_new_reward_debt(user_info)?;
