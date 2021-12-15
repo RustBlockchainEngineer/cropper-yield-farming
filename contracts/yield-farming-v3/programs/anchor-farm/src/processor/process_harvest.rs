@@ -11,8 +11,10 @@ use crate::{
 pub fn process_harvest(ctx: Context<Harvest>, _global_state_nonce: u8, _farm_nonce: u8, _user_info_nonce: u8, _reward_type: u8) -> ProgramResult {
     let cur_timestamp = ctx.accounts.clock.unix_timestamp as u64;
     let mut tag = FARM_POOL_REWARD_TAG;
+    msg!("here1");
     assert_true(ctx.accounts.user_reward_token.owner == ctx.accounts.harvester.key())?;
     assert_true(ctx.accounts.fee_reward_token.owner == ctx.accounts.global_state.fee_owner)?;
+    msg!("here2");
     if RewardType::is_single(_reward_type) {
         assert_true(ctx.accounts.user_reward_token.mint == ctx.accounts.farm.reward_mint_address)?;
         assert_true(ctx.accounts.fee_reward_token.mint == ctx.accounts.farm.reward_mint_address)?;
@@ -21,14 +23,15 @@ pub fn process_harvest(ctx: Context<Harvest>, _global_state_nonce: u8, _farm_non
         assert_true(ctx.accounts.user_reward_token.mint == ctx.accounts.farm.reward_mint_address_dual)?;
         assert_true(ctx.accounts.fee_reward_token.mint == ctx.accounts.farm.reward_mint_address_dual)?;
         tag = DUAL_POOL_REWARD_TAG;
+        msg!("here3");
     }
 
     let farm_key = ctx.accounts.farm.key();
     let pool_reward_seeds = [tag, farm_key.as_ref()];
     assert_pda(&pool_reward_seeds, ctx.program_id, &ctx.accounts.pool_reward_token.key())?;
-
+    msg!("here4");
     ctx.accounts.farm.update(&mut ctx.accounts.user_info, cur_timestamp)?;
-
+    msg!("here5");
     harvest(
         &mut ctx.accounts.user_info, 
         &ctx.accounts.global_state, 
@@ -40,6 +43,7 @@ pub fn process_harvest(ctx: Context<Harvest>, _global_state_nonce: u8, _farm_non
         &mut ctx.accounts.farm, 
         RewardType::is_dual(_reward_type)
     )?;
+    msg!("here6");
     Ok(())
 }
 
