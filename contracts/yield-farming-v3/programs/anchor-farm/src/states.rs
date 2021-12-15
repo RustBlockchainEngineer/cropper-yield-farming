@@ -181,6 +181,7 @@ impl FarmPool {
         if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 {
             pending = pending.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
         }
+        msg!("pending_rewards_dual: pending = {}", pending.to_u64()?);
         Ok(pending.to_u64()?)
     }
     /// get total reward amount for a user so far
