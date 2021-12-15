@@ -178,6 +178,8 @@ impl FarmPool {
             msg!("pending_dual < reward_debt_dual");
             return Ok(0);
         }
+        msg!("pending_rewards_dual: reward_debt = {}", reward_debt.to_u64()?);
+        msg!("pending_rewards_dual: pending = {}", pending.to_u64()?);
         if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 {
             pending = pending.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
         }
