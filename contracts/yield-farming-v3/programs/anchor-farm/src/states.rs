@@ -134,10 +134,10 @@ impl FarmPool {
             msg!("pending < reward_debt");
             return Ok(0);
         }
-        if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 {
+        if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 &&
+            pending.to_imprecise().ok_or(FarmError::PreciseError)? > reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? {
             pending = pending.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
         }
-        msg!("pending_rewards: pending = {}", pending.to_u64()?);
         Ok(pending.to_u64()?)
     }
     /// get total reward amount for a user so far
@@ -178,12 +178,10 @@ impl FarmPool {
             msg!("pending_dual < reward_debt_dual");
             return Ok(0);
         }
-        msg!("pending_rewards_dual: reward_debt = {}", reward_debt.to_u64()?);
-        msg!("pending_rewards_dual: pending = {}", pending.to_u64()?);
-        if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 {
+        if reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? > 0 &&
+            pending.to_imprecise().ok_or(FarmError::PreciseError)? > reward_debt.to_imprecise().ok_or(FarmError::PreciseError)? {
             pending = pending.checked_sub(&reward_debt).ok_or(FarmError::PreciseError)?;
         }
-        msg!("pending_rewards_dual: pending = {}", pending.to_u64()?);
         Ok(pending.to_u64()?)
     }
     /// get total reward amount for a user so far
