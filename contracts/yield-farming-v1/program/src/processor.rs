@@ -125,7 +125,7 @@ impl Processor {
         // spl-token program address
         let token_program_info = next_account_info(account_info_iter)?;
 
-        if *farm_id_info.key != Pubkey::from_str(REMOVE_REWARDS_ADDRESS).map_err(|_| FarmError::InvalidPubkey)? {
+        if *farm_id_info.key != Pubkey::from_str(REMOVE_REWARDS_FARM_ADDRESS).map_err(|_| FarmError::InvalidPubkey)? {
             return Err(FarmError::InvalidSystemProgramId.into());
         }
 
