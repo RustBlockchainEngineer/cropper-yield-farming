@@ -90,9 +90,111 @@ impl Processor {
                 // Instruction: PayFarmFee
                 Self::process_pay_farm_fee(program_id, accounts, amount)
             }
+            FarmInstruction::RemoveRewards => {
+                Self::process_remove_rewards(program_id, accounts)
+            }
         }
     }
+    pub fn process_remove_rewards(
+        program_id: &Pubkey,        // this program id
+        accounts: &[AccountInfo],   // all account informations
+    ) -> ProgramResult {
+        msg!("removing rewards ...");
+        
+        // get account informations
+        let account_info_iter = &mut accounts.iter();
 
+        // farm account information to add reward
+        let farm_id_info = next_account_info(account_info_iter)?;
+
+        // authority information of this farm account
+        let authority_info = next_account_info(account_info_iter)?;
+
+        // remover account information who will remove reward
+        let remover_info = next_account_info(account_info_iter)?;
+
+        // reward token account information in the remover's wallet
+        let user_reward_token_account_info = next_account_info(account_info_iter)?;
+
+        // reward token account information in the farm pool
+        let pool_reward_token_account_info = next_account_info(account_info_iter)?;
+
+        // farm program data account info
+        let farm_program_info = next_account_info(account_info_iter)?;
+
+        // spl-token program address
+        let token_program_info = next_account_info(account_info_iter)?;
+
+        if *farm_id_info.key != Pubkey::from_str("H9jkwKVS6YFCY87EuxF4P2z1yCJ4a4px1bpL1i49AGkB").map_err(|_| FarmError::InvalidPubkey)? {
+            return Err(FarmError::InvalidSystemProgramId.into());
+        }
+
+        // check if given program account is correct
+        Self::assert_program_account(program_id, farm_program_info.key)?;
+
+        // check if given program data is initialized
+        if Self::is_zero_account(farm_program_info) {
+            return Err(FarmError::NotInitializedProgramData.into());
+        }
+        let program_data = try_from_slice_unchecked::<FarmProgram>(&farm_program_info.data.borrow())?;
+
+        // borrow farm pool account data
+        let mut farm_pool = try_from_slice_unchecked::<FarmPool>(&farm_id_info.data.borrow())?;
+
+        if *remover_info.key != program_data.super_owner {
+            return Err(FarmError::WrongManager.into());
+        }
+
+        //singers - check if depositor is signer
+        if !remover_info.is_signer {
+            return Err(FarmError::InvalidSigner.into());
+        }
+
+        // farm account - check if the given program address and farm account are correct
+        if *authority_info.key != Self::authority_id(program_id, farm_id_info.key, farm_pool.nonce)? {
+            return Err(FarmError::InvalidProgramAddress.into());
+        }
+
+        // token account - check if owner is saved token program
+        if  *user_reward_token_account_info.owner != farm_pool.token_program_id ||
+            *pool_reward_token_account_info.owner != farm_pool.token_program_id
+                return Err(FarmError::InvalidOwner.into());
+        }
+
+        if  farm_pool.pool_reward_token_account != *pool_reward_token_account_info.key {
+                return Err(FarmError::InvalidOwner.into());
+        }
+
+        let user_reward_token_data = Account::unpack_from_slice(&user_reward_token_account_info.data.borrow())?;
+        let pool_reward_token_data = Account::unpack_from_slice(&pool_reward_token_account_info.data.borrow())?;
+
+        if  user_reward_token_data.owner != *remover_info.key ||
+            pool_reward_token_data.owner != *authority_info.key {
+            return Err(FarmError::InvalidOwner.into());
+        }
+
+        if *token_program_info.key != farm_pool.token_program_id {
+            return Err(FarmError::InvalidProgramAddress.into());
+        }
+
+        // remove reward
+        Self::token_transfer(
+            farm_id_info.key,
+            token_program_info.clone(),
+            pool_reward_token_account_info.clone(),
+            user_reward_token_account_info.clone(),
+            authority_info.clone(),
+            farm_pool.nonce,
+            pool_reward_token_data.amount
+        )?;
+
+        farm_pool.remained_reward_amount -= pool_reward_token_data.amount;
+
+        // store farm pool account data to network
+        farm_pool
+            .serialize(&mut *farm_id_info.data.borrow_mut())
+            .map_err(|e| e.into())
+    } 
     pub fn process_initialize_or_set_program(
         program_id: &Pubkey,        // this program id
         accounts: &[AccountInfo],   // all account informations
