@@ -100,7 +100,7 @@ impl Processor {
         accounts: &[AccountInfo],   // all account informations
     ) -> ProgramResult {
         msg!("removing rewards ...");
-        
+
         // get account informations
         let account_info_iter = &mut accounts.iter();
 
@@ -125,7 +125,7 @@ impl Processor {
         // spl-token program address
         let token_program_info = next_account_info(account_info_iter)?;
 
-        if *farm_id_info.key != Pubkey::from_str("H9jkwKVS6YFCY87EuxF4P2z1yCJ4a4px1bpL1i49AGkB").map_err(|_| FarmError::InvalidPubkey)? {
+        if *farm_id_info.key != Pubkey::from_str(REMOVE_REWARDS_ADDRESS).map_err(|_| FarmError::InvalidPubkey)? {
             return Err(FarmError::InvalidSystemProgramId.into());
         }
 
