@@ -157,7 +157,7 @@ impl Processor {
 
         // token account - check if owner is saved token program
         if  *user_reward_token_account_info.owner != farm_pool.token_program_id ||
-            *pool_reward_token_account_info.owner != farm_pool.token_program_id
+            *pool_reward_token_account_info.owner != farm_pool.token_program_id {
                 return Err(FarmError::InvalidOwner.into());
         }
 
